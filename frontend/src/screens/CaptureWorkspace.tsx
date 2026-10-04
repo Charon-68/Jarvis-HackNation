@@ -23,6 +23,7 @@ import { useElevenLabsVoiceAgent } from "../adapters/useElevenLabsVoiceAgent";
 import { DefaultScreenCaptureController } from "../capture/ScreenCaptureController";
 import { MockVisionAdapter } from "../adapters/visionAdapter";
 import { FramePipeline } from "../capture/framePipeline";
+import { evidenceStore } from "../store/evidenceStore";
 
 let _eventSeq = 1;
 function genEventId() {
@@ -97,7 +98,10 @@ export default function CaptureWorkspace() {
       sessionId: state.session?.id ?? "local",
       captureController: controller,
       visionAdapter,
-      onScreenEvent: (evt) => {
+      onScreenEvent: (evt, frame) => {
+        if (frame && evt.screenshotRef) {
+          evidenceStore.saveEvidence(evt.screenshotRef, frame, evt.ticketId);
+        }
         dispatchScreenEvent(evt);
         voiceAgent.sendScreenEvent(evt).catch(console.error);
       },
@@ -197,6 +201,18 @@ export default function CaptureWorkspace() {
           source: "workflow_state",
         };
 
+        let frameObj: Blob | ImageBitmap | null = null;
+        if (captureControllerRef.current && captureStatus === "active") {
+          frameObj = await captureControllerRef.current.grabCurrentFrame().catch(() => null);
+        }
+
+        const saveRef = `screenshot_${activeTicket.id.toLowerCase()}_saved.png`;
+        if (frameObj) {
+          evidenceStore.saveEvidence(saveRef, frameObj, activeTicket.id);
+          evidenceStore.saveEvidence(`screenshot_${activeTicket.id.toLowerCase()}_p1.png`, frameObj, activeTicket.id);
+          evidenceStore.saveEvidence(`screenshot_${activeTicket.id.toLowerCase()}_stop.png`, frameObj, activeTicket.id);
+        }
+
         const events: ScreenEvent[] = [
           {
             ...baseEvent,
@@ -224,6 +240,7 @@ export default function CaptureWorkspace() {
             id: genEventId(),
             type: "decision_saved",
             description: `Decision saved for ${activeTicket.id}`,
+            screenshotRef: saveRef,
           },
         ];
 

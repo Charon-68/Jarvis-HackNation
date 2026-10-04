@@ -29,9 +29,9 @@ async function runTests() {
       sessionId: session.id,
       ticketId: "T007",
       timestampMs: Date.now(),
-      priority: "P3",
-      team: "Support",
-      action: "Normal troubleshooting",
+      priority: "Low Priority",
+      team: "Customer Support",
+      action: "Follow Standard Procedure",
       submitted: true,
     };
 
@@ -51,7 +51,7 @@ async function runTests() {
   }
 
   // -------------------------------------------------------------------------
-  // Test 2: Correct attempt (P1 / Engineering / STOP normal processing + escalate) is allowed
+  // Test 2: Correct attempt (Emergency / Engineering / Escalate Immediately) is allowed
   // -------------------------------------------------------------------------
   {
     console.log("Test 2: Correct attempt is allowed to save...");
@@ -60,9 +60,9 @@ async function runTests() {
       sessionId: session.id,
       ticketId: "T007",
       timestampMs: Date.now(),
-      priority: "P1",
+      priority: "Emergency",
       team: "Engineering",
-      action: "STOP normal processing + escalate",
+      action: "Escalate Immediately",
       submitted: true,
     };
 

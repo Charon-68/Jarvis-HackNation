@@ -26,38 +26,44 @@ import type {
 import ApprenticePanel from "../components/ApprenticePanel";
 import EvidenceReplayModal from "../components/EvidenceReplayModal";
 
-const PRIORITIES: TicketPriority[] = ["P1", "P2", "P3"];
-const TEAMS: TicketTeam[] = ["Infrastructure", "Support", "Engineering"];
+const PRIORITIES: TicketPriority[] = ["Emergency", "Moderate", "Low Priority"];
+const TEAMS: TicketTeam[] = [
+  "Operations",
+  "HR",
+  "Engineering",
+  "Customer Support",
+  "Accounting",
+];
 const ACTIONS: TicketAction[] = [
-  "Immediate escalation",
-  "Normal troubleshooting",
-  "STOP normal processing + escalate",
-  "Send reset procedure",
-  "Investigate performance",
+  "Escalate Immediately",
+  "Investigate & Resolve",
+  "Follow Standard Procedure",
+  "Request More Information",
+  "Monitor & Follow Up",
 ];
 
 let _seq = 1;
 function uid(p: string) { return `${p}_${Date.now()}_${_seq++}`; }
 
 function priorityColor(p: string) {
-  if (p === "P1") return "var(--p1-text)";
-  if (p === "P2") return "var(--p2-text)";
-  return "var(--p3-text)";
+  if (p === "Emergency") return "var(--emergency-text)";
+  if (p === "Moderate") return "var(--moderate-text)";
+  return "var(--low-text)";
 }
 
 function priorityBg(p: string) {
-  if (p === "P1") return "var(--p1-bg)";
-  if (p === "P2") return "var(--p2-bg)";
-  return "var(--p3-bg)";
+  if (p === "Emergency") return "var(--emergency-bg)";
+  if (p === "Moderate") return "var(--moderate-bg)";
+  return "var(--low-bg)";
 }
 
 export default function TrainingWorkspace() {
   const { state, completeSession, dispatchAgentMessage } = useSession();
 
-  // Canonical initial attempt default: P3 / Support / Normal troubleshooting
-  const [priority, setPriority] = useState<TicketPriority>("P3");
-  const [team, setTeam] = useState<TicketTeam>("Support");
-  const [action, setAction] = useState<TicketAction>("Normal troubleshooting");
+  // Canonical initial attempt default: Low Priority / Customer Support / Follow Standard Procedure
+  const [priority, setPriority] = useState<TicketPriority>("Low Priority");
+  const [team, setTeam] = useState<TicketTeam>("Customer Support");
+  const [action, setAction] = useState<TicketAction>("Follow Standard Procedure");
   const [isSaving, setIsSaving] = useState(false);
   const [intervention, setIntervention] = useState<TutorIntervention | null>(null);
   const [savedOk, setSavedOk] = useState(false);
@@ -124,7 +130,7 @@ export default function TrainingWorkspace() {
     
     // Auto start capture in training
     controller.start().catch(console.error);
-    pipeline.start().catch(console.error);
+    pipeline.start();
 
     return () => {
       pipeline.stop();
@@ -186,8 +192,8 @@ export default function TrainingWorkspace() {
           id: uid("result"),
           sessionId: state.session.id,
           initialDecision: firstAttempt ?? { priority, team, action },
-          interventionOccurred: !!firstAttempt && (firstAttempt.priority !== "P1" || firstAttempt.action !== "STOP normal processing + escalate"),
-          initialDecisionWrong: !!firstAttempt && (firstAttempt.priority !== "P1" || firstAttempt.action !== "STOP normal processing + escalate"),
+          interventionOccurred: !!firstAttempt && (firstAttempt.priority !== "Emergency" || firstAttempt.action !== "Escalate Immediately"),
+          initialDecisionWrong: !!firstAttempt && (firstAttempt.priority !== "Emergency" || firstAttempt.action !== "Escalate Immediately"),
           correctionOccurred: !!firstAttempt,
           finalDecision: { priority, team, action },
           completed: true,

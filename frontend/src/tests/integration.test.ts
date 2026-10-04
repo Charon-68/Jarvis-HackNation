@@ -124,7 +124,7 @@ async function runGoldenFlowIntegrationTest() {
   // -------------------------------------------------------------------------
   console.log("Step 3: Processing Canonical Expert Triage Sequence (T001 → T006)...");
   const expertTickets = getExpertSequenceTickets();
-  assert(expertTickets.length === 5, "Expert sequence must contain 5 tickets");
+  assert(expertTickets.length === 6, "Expert sequence must contain 6 tickets");
 
   for (const ticket of expertTickets) {
     // Open Ticket ScreenEvent
@@ -155,8 +155,8 @@ async function runGoldenFlowIntegrationTest() {
     await mockVoiceAgent.sendScreenEvent(saveEvent);
   }
 
-  assert(screenEventsCaptured.length === 10, "Should have captured 10 workflow ScreenEvents (open + save x 5)");
-  console.log(`  ✓ Successfully triaged 5 tickets and emitted ${screenEventsCaptured.length} ScreenEvents\n`);
+  assert(screenEventsCaptured.length === 12, "Should have captured 12 workflow ScreenEvents (open + save x 6)");
+  console.log(`  ✓ Successfully triaged 6 tickets and emitted ${screenEventsCaptured.length} ScreenEvents\n`);
 
   // -------------------------------------------------------------------------
   // Step 4: Verify Pause stops frame processing while preserving stream
@@ -217,21 +217,21 @@ async function runGoldenFlowIntegrationTest() {
   assert(trainingSession.phase === "training", "Training session initial phase must be 'training'");
 
   const unseenCase = TRAINING_CASE;
-  assert(unseenCase.id === "T007", "Unseen case ID must be T007");
+  assert(unseenCase.id === "T_NEW_01" || unseenCase.id === "T007", "Unseen case ID must be T_NEW_01 or T007");
   console.log(`  ✓ Training Session initialized for unseen case "${unseenCase.issue}"\n`);
 
   // -------------------------------------------------------------------------
   // Step 8: Pre-Save Evaluation Gate — Wrong Attempt BLOCKED
   // -------------------------------------------------------------------------
-  console.log("Step 8: Pre-Save Evaluation Gate — Submitting canonical wrong attempt (P3/Support/Normal)...");
+  console.log("Step 8: Pre-Save Evaluation Gate — Submitting canonical wrong attempt (Low Priority/Customer Support/Follow Standard Procedure)...");
   const wrongAttempt: DecisionAttempt = {
     id: "attempt_wrong_01",
     sessionId: trainingSession.id,
     ticketId: unseenCase.id,
     timestampMs: Date.now(),
-    priority: "P3",
-    team: "Support",
-    action: "Normal troubleshooting",
+    priority: "Low Priority",
+    team: "Customer Support",
+    action: "Follow Standard Procedure",
     submitted: true,
   };
 
@@ -256,15 +256,15 @@ async function runGoldenFlowIntegrationTest() {
   // -------------------------------------------------------------------------
   // Step 9: Pre-Save Evaluation Gate — Corrected Decision ALLOWED
   // -------------------------------------------------------------------------
-  console.log("Step 9: Correcting decision (P1/Engineering/STOP normal processing + escalate)...");
+  console.log("Step 9: Correcting decision (Emergency/Engineering/Escalate Immediately)...");
   const correctedAttempt: DecisionAttempt = {
     id: "attempt_corrected_01",
     sessionId: trainingSession.id,
     ticketId: unseenCase.id,
     timestampMs: Date.now(),
-    priority: "P1",
+    priority: "Emergency",
     team: "Engineering",
-    action: "STOP normal processing + escalate",
+    action: "Escalate Immediately",
     submitted: true,
   };
 
@@ -306,7 +306,7 @@ async function runGoldenFlowIntegrationTest() {
   assert(savedResult.completed === true, "Training result must be marked completed");
   assert(savedResult.initialDecisionWrong === true, "Result must record that initial decision was wrong");
   assert(savedResult.correctionOccurred === true, "Result must record that correction occurred");
-  assert(savedResult.finalDecision.action === "STOP normal processing + escalate", "Final decision action must match");
+  assert(savedResult.finalDecision.action === "Escalate Immediately", "Final decision action must match");
   console.log("  ✓ Training result persisted successfully\n");
 
   console.log("=================================================================");

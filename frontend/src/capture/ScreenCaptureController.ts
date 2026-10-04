@@ -22,6 +22,7 @@ export interface ScreenCaptureController {
   getCaptureState(): CaptureState;
   onFrame(callback: (frame: Blob | ImageBitmap) => void): () => void;
   onStatusChange(callback: (state: CaptureState) => void): () => void;
+  grabCurrentFrame(): Promise<Blob | ImageBitmap | null>;
 }
 
 export class DefaultScreenCaptureController implements ScreenCaptureController {
@@ -248,6 +249,50 @@ export class DefaultScreenCaptureController implements ScreenCaptureController {
       this.videoElement.pause();
       this.videoElement.srcObject = null;
     }
+  }
+
+  /**
+   * Sample frame on demand for evidence association
+   */
+  public async grabCurrentFrame(): Promise<Blob | ImageBitmap | null> {
+    if (this.state.status !== "active") return null;
+
+    if (typeof createImageBitmap !== "undefined" && this.videoElement && this.videoElement.videoWidth > 0) {
+      try {
+        return await createImageBitmap(this.videoElement);
+      } catch {
+        return this.grabCanvasBlob();
+      }
+    }
+    return this.grabCanvasBlob();
+  }
+
+  private grabCanvasBlob(): Promise<Blob | null> {
+    return new Promise((resolve) => {
+      if (typeof document === "undefined" || !this.videoElement || !this.canvasElement) {
+        return resolve(new Blob(["mock-frame-bytes"], { type: "image/jpeg" }));
+      }
+
+      const width = this.videoElement.videoWidth || 640;
+      const height = this.videoElement.videoHeight || 480;
+
+      this.canvasElement.width = width;
+      this.canvasElement.height = height;
+
+      const ctx = this.canvasElement.getContext("2d");
+      if (ctx) {
+        ctx.drawImage(this.videoElement, 0, 0, width, height);
+        if (this.canvasElement.toBlob) {
+          this.canvasElement.toBlob(
+            (blob) => resolve(blob),
+            "image/jpeg",
+            0.85,
+          );
+          return;
+        }
+      }
+      resolve(null);
+    });
   }
 
   /**

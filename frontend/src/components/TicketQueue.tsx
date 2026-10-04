@@ -13,9 +13,9 @@ interface TicketQueueProps {
 }
 
 function priorityClass(p: string) {
-  if (p === "P1") return "badge-p1";
-  if (p === "P2") return "badge-p2";
-  return "badge-p3";
+  if (p === "Emergency") return "badge-emergency";
+  if (p === "Moderate") return "badge-moderate";
+  return "badge-low";
 }
 
 export default function TicketQueue({

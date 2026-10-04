@@ -42,7 +42,7 @@ async function runTests() {
     assert(step3 !== undefined, "WorkMap step for T003 should exist");
 
     assert(step3!.observedAction.includes("T003"), "Step should contain observedAction");
-    assert(step3!.decision.includes("STOP"), "Step should contain decision");
+    assert(step3!.decision.includes("Emergency") || step3!.decision.includes("Escalate"), "Step should contain decision");
     assert(step3!.expertReason.length > 0, "Step should contain expertReason");
     assert(step3!.guardrails.length > 0, "Step should contain guardrails");
     assert(step3!.teachingPoint.length > 0, "Step should contain teachingPoint");

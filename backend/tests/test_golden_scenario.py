@@ -132,9 +132,9 @@ def test_full_golden_scenario_integration(golden_db):
         "sessionId": "session_training_01",
         "ticketId": "T_NEW_01",
         "timestampMs": 10000,
-        "priority": "P3",
-        "team": "Support",
-        "action": "Normal troubleshooting",
+        "priority": "Low Priority",
+        "team": "Customer Support",
+        "action": "Follow Standard Procedure",
         "submitted": True,
     }
     wrong_eval_res = client.post("/api/training/decision-attempt", json=wrong_attempt)
@@ -147,7 +147,7 @@ def test_full_golden_scenario_integration(golden_db):
     assert intervention["ticketId"] == "T_NEW_01"
     assert intervention["severity"] == "critical"
     assert "data loss" in intervention["message"].lower()
-    assert intervention["guardrail"] == "Possible data loss → stop normal processing and escalate."
+    assert intervention["guardrail"] == "Possible data loss → stop normal processing and escalate immediately."
     assert intervention["expertEvidence"]["workMapStepId"] == "step_04"
     assert intervention["expertEvidence"]["screenshotRef"] == "frame_050"
 
@@ -157,9 +157,9 @@ def test_full_golden_scenario_integration(golden_db):
         "sessionId": "session_training_01",
         "ticketId": "T_NEW_01",
         "timestampMs": 25000,
-        "priority": "P1",
+        "priority": "Emergency",
         "team": "Engineering",
-        "action": "STOP + escalate",
+        "action": "Escalate Immediately",
         "submitted": True,
     }
     correct_eval_res = client.post("/api/training/decision-attempt", json=correct_attempt)
@@ -173,11 +173,11 @@ def test_full_golden_scenario_integration(golden_db):
     result_payload = {
         "id": "res_001",
         "sessionId": "session_training_01",
-        "initialDecision": {"priority": "P3", "team": "Support", "action": "Normal troubleshooting"},
+        "initialDecision": {"priority": "Low Priority", "team": "Customer Support", "action": "Follow Standard Procedure"},
         "interventionOccurred": True,
         "initialDecisionWrong": True,
         "correctionOccurred": True,
-        "finalDecision": {"priority": "P1", "team": "Engineering", "action": "STOP + escalate"},
+        "finalDecision": {"priority": "Emergency", "team": "Engineering", "action": "Escalate Immediately"},
         "completed": True,
         "timestampMs": 30000,
     }
@@ -191,4 +191,4 @@ def test_full_golden_scenario_integration(golden_db):
     assert res_data["sessionId"] == "session_training_01"
     assert res_data["interventionOccurred"] is True
     assert res_data["correctionOccurred"] is True
-    assert res_data["finalDecision"]["action"] == "STOP + escalate"
+    assert res_data["finalDecision"]["action"] == "Escalate Immediately"

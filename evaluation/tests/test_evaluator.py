@@ -58,9 +58,9 @@ def test_t001_full_outage_accepted():
     attempt = DecisionAttempt(
         sessionId="session_demo",
         ticketId="T001",
-        priority="P1",
-        team="Infrastructure",
-        action="Immediate escalation",
+        priority="Emergency",
+        team="Engineering",
+        action="Escalate Immediately",
     )
     result = evaluator.evaluate(attempt)
     assert result.allowSave is True
@@ -72,9 +72,9 @@ def test_t002_single_user_accepted():
     attempt = DecisionAttempt(
         sessionId="session_demo",
         ticketId="T002",
-        priority="P3",
-        team="Support",
-        action="Normal troubleshooting",
+        priority="Low Priority",
+        team="Customer Support",
+        action="Follow Standard Procedure",
     )
     result = evaluator.evaluate(attempt)
     assert result.allowSave is True
@@ -86,9 +86,9 @@ def test_t003_wrong_decision_blocked(sample_work_map):
     attempt = DecisionAttempt(
         sessionId="session_demo",
         ticketId="T003",
-        priority="P3",
-        team="Support",
-        action="Normal troubleshooting",
+        priority="Low Priority",
+        team="Customer Support",
+        action="Follow Standard Procedure",
     )
     result = evaluator.evaluate(attempt, work_map=sample_work_map)
     assert result.allowSave is False
@@ -96,7 +96,7 @@ def test_t003_wrong_decision_blocked(sample_work_map):
     assert result.intervention.ticketId == "T003"
     assert result.intervention.severity == "critical"
     assert "data loss" in result.intervention.message.lower()
-    assert result.intervention.guardrail == "Possible data loss → stop normal processing and escalate."
+    assert result.intervention.guardrail == "Possible data loss → stop normal processing and escalate immediately."
     assert result.intervention.expertEvidence is not None
     assert result.intervention.expertEvidence.workMapStepId == "step_04"
 
@@ -106,9 +106,9 @@ def test_t003_correct_decision_allowed(sample_work_map):
     attempt = DecisionAttempt(
         sessionId="session_demo",
         ticketId="T003",
-        priority="P1",
+        priority="Emergency",
         team="Engineering",
-        action="STOP + escalate",
+        action="Escalate Immediately",
     )
     result = evaluator.evaluate(attempt, work_map=sample_work_map)
     assert result.allowSave is True
@@ -120,9 +120,9 @@ def test_t004_password_reset_accepted():
     attempt = DecisionAttempt(
         sessionId="session_demo",
         ticketId="T004",
-        priority="P3",
-        team="Support",
-        action="Send reset procedure",
+        priority="Low Priority",
+        team="Accounting",
+        action="Investigate & Resolve",
     )
     result = evaluator.evaluate(attempt)
     assert result.allowSave is True
@@ -133,9 +133,9 @@ def test_t005_api_error_accepted():
     attempt = DecisionAttempt(
         sessionId="session_demo",
         ticketId="T005",
-        priority="P1",
-        team="Engineering",
-        action="Immediate escalation",
+        priority="Moderate",
+        team="Operations",
+        action="Request More Information",
     )
     result = evaluator.evaluate(attempt)
     assert result.allowSave is True
@@ -146,9 +146,9 @@ def test_t006_slow_dashboard_accepted():
     attempt = DecisionAttempt(
         sessionId="session_demo",
         ticketId="T006",
-        priority="P2",
-        team="Engineering",
-        action="Investigate performance",
+        priority="Moderate",
+        team="HR",
+        action="Monitor & Follow Up",
     )
     result = evaluator.evaluate(attempt)
     assert result.allowSave is True
@@ -157,16 +157,16 @@ def test_t006_slow_dashboard_accepted():
 def test_unseen_data_loss_case_wrong_decision(sample_work_map):
     """
     Critical requirement:
-    P3 / Support / Normal troubleshooting on the unseen data-loss case (T_NEW_01)
+    Low Priority / Customer Support / Follow Standard Procedure on the unseen data-loss case (T_NEW_01)
     MUST return allowSave=false and severity=critical.
     """
     evaluator = DecisionEvaluator()
     attempt = DecisionAttempt(
         sessionId="session_demo",
         ticketId="T_NEW_01",
-        priority="P3",
-        team="Support",
-        action="Normal troubleshooting",
+        priority="Low Priority",
+        team="Customer Support",
+        action="Follow Standard Procedure",
     )
     result = evaluator.evaluate(attempt, work_map=sample_work_map)
 
@@ -174,7 +174,7 @@ def test_unseen_data_loss_case_wrong_decision(sample_work_map):
     assert result.intervention is not None
     assert result.intervention.ticketId == "T_NEW_01"
     assert result.intervention.severity == "critical"
-    assert result.intervention.guardrail == "Possible data loss → stop normal processing and escalate."
+    assert result.intervention.guardrail == "Possible data loss → stop normal processing and escalate immediately."
     assert result.intervention.expertEvidence is not None
 
 
@@ -183,9 +183,9 @@ def test_unseen_data_loss_case_corrected(sample_work_map):
     attempt = DecisionAttempt(
         sessionId="session_demo",
         ticketId="T_NEW_01",
-        priority="P1",
+        priority="Emergency",
         team="Engineering",
-        action="STOP + escalate",
+        action="Escalate Immediately",
     )
     result = evaluator.evaluate(attempt, work_map=sample_work_map)
 
@@ -203,9 +203,9 @@ def test_deterministic_block_offline_without_claude():
     attempt = DecisionAttempt(
         sessionId="session_demo",
         ticketId="T_NEW_01",
-        priority="P3",
-        team="Support",
-        action="Normal troubleshooting",
+        priority="Low Priority",
+        team="Customer Support",
+        action="Follow Standard Procedure",
     )
     result = evaluator.evaluate(attempt)
 
@@ -221,7 +221,7 @@ def test_semantic_evaluator_fallback_on_failure():
     attempt = DecisionAttempt(
         sessionId="session_demo",
         ticketId="UNKNOWN_TICKET_999",
-        priority="P3",
+        priority="Low Priority",
         action="Unknown Action",
     )
     result = evaluator.evaluate(attempt)
@@ -251,9 +251,9 @@ def test_training_decision_attempt_api_endpoint():
     payload = {
         "sessionId": "session_demo",
         "ticketId": "T_NEW_01",
-        "priority": "P3",
-        "team": "Support",
-        "action": "Normal troubleshooting",
+        "priority": "Low Priority",
+        "team": "Customer Support",
+        "action": "Follow Standard Procedure",
         "submitted": True,
     }
     res = client.post("/api/training/decision-attempt", json=payload)

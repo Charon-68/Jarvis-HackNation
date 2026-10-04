@@ -7,16 +7,21 @@
 // 1. Support Ticket Data Model
 // ---------------------------------------------------------------------------
 
-export type TicketPriority = "P1" | "P2" | "P3";
+export type TicketPriority = "Emergency" | "Moderate" | "Low Priority";
 
-export type TicketTeam = "Infrastructure" | "Support" | "Engineering";
+export type TicketTeam =
+  | "Operations"
+  | "HR"
+  | "Engineering"
+  | "Customer Support"
+  | "Accounting";
 
 export type TicketAction =
-  | "Immediate escalation"
-  | "Normal troubleshooting"
-  | "STOP normal processing + escalate"
-  | "Send reset procedure"
-  | "Investigate performance";
+  | "Escalate Immediately"
+  | "Investigate & Resolve"
+  | "Follow Standard Procedure"
+  | "Request More Information"
+  | "Monitor & Follow Up";
 
 export interface Ticket {
   id: string; // e.g. "T001", "T002"

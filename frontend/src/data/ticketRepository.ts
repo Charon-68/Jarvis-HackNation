@@ -13,18 +13,18 @@ import rawTickets from "../../../shared/demo-tickets.json";
 const TICKETS: Ticket[] = (rawTickets as unknown[]).map((t) => t as Ticket);
 
 /** Canonical expert sequence for the golden demo */
-export const EXPERT_SEQUENCE: string[] = ["T001", "T002", "T003", "T005", "T006"];
+export const EXPERT_SEQUENCE: string[] = ["T001", "T002", "T003", "T004", "T005", "T006"];
 
 /** Unseen training case (not in the expert sequence) */
 export const TRAINING_CASE = {
-  id: "T007",
+  id: "T_NEW_01",
   customer: "New Customer",
   issue: "12 customers lost transaction history after an update",
   scope: "Multiple customers — potential data loss",
-  expectedPriority: "P1" as TicketPriority,
+  expectedPriority: "Emergency" as TicketPriority,
   expectedTeam: "Engineering" as TicketTeam,
-  expectedAction: "STOP normal processing + escalate" as TicketAction,
-  guardrail: "Possible data loss means stop normal processing and escalate.",
+  expectedAction: "Escalate Immediately" as TicketAction,
+  guardrail: "Possible data loss means stop normal processing and escalate immediately.",
 };
 
 /** Return all demo tickets */

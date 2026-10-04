@@ -16,7 +16,7 @@ class DeterministicEvaluator:
         # Check for data loss guardrail violation first (T003, T_NEW_01, etc.)
         if is_data_loss_case(ticket_id):
             action = attempt.action or ""
-            if action.strip() != "STOP + escalate":
+            if action.strip() != "Escalate Immediately":
                 # Critical safety block
                 rule = CANONICAL_TICKET_RULES.get(ticket_id, CANONICAL_TICKET_RULES["T003"])
                 intervention = InterventionBuilder.create_intervention(
@@ -26,9 +26,9 @@ class DeterministicEvaluator:
                     action=attempt.action,
                     correct=False,
                     severity="critical",
-                    message="Possible data loss is a stop-and-escalate case.",
+                    message="Possible data loss is an immediate escalation case.",
                     reason="The expert identified potential data loss as a safety guardrail.",
-                    guardrail="Possible data loss → stop normal processing and escalate.",
+                    guardrail="Possible data loss → stop normal processing and escalate immediately.",
                     work_map_step_id=rule.get("evidence_step_id", "step_04"),
                     timestamp_ms=rule.get("evidence_timestamp_ms", 50000),
                     screenshot_ref=rule.get("evidence_screenshot_ref", "frame_050"),

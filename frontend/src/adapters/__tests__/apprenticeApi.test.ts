@@ -37,9 +37,9 @@ async function runTests() {
       sessionId: session.id,
       ticketId: "T007",
       timestampMs: Date.now(),
-      priority: "P1",
+      priority: "Emergency",
       team: "Engineering",
-      action: "STOP normal processing + escalate",
+      action: "Escalate Immediately",
       submitted: true,
     };
 

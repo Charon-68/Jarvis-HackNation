@@ -13,7 +13,7 @@ export interface FramePipelineOptions {
   sessionId: string;
   captureController: ScreenCaptureController;
   visionAdapter: VisionAdapter;
-  onScreenEvent: (event: ScreenEvent) => void;
+  onScreenEvent: (event: ScreenEvent, frame?: Blob | ImageBitmap) => void;
   getWorkflowContext?: () => Record<string, unknown>;
 }
 
@@ -21,7 +21,7 @@ export class FramePipeline {
   private sessionId: string;
   private captureController: ScreenCaptureController;
   private visionAdapter: VisionAdapter;
-  private onScreenEvent: (event: ScreenEvent) => void;
+  private onScreenEvent: (event: ScreenEvent, frame?: Blob | ImageBitmap) => void;
   private getWorkflowContext?: () => Record<string, unknown>;
 
   private unsubFrame: (() => void) | null = null;
@@ -69,8 +69,11 @@ export class FramePipeline {
       });
 
       if (event) {
+        if (!event.screenshotRef) {
+          event.screenshotRef = `ref_vision_${event.id}`;
+        }
         this.priorEvent = event;
-        this.onScreenEvent(event);
+        this.onScreenEvent(event, frame);
       }
     } catch (err) {
       console.error("Frame processing error in FramePipeline:", err);

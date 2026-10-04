@@ -12,9 +12,9 @@ The workspace contains:
 
 SUPPORTED EVENT TYPES:
 - ticket_opened: A new ticket is selected and displayed in the main workspace.
-- priority_changed: Priority field was modified (e.g., P1, P2, P3).
-- team_changed: Team assignment was modified (e.g., Infrastructure, Support, Engineering).
-- action_changed: Action dropdown was modified (e.g., "Immediate escalation", "Normal troubleshooting", "STOP normal processing + escalate", "Send reset procedure", "Investigate performance").
+- priority_changed: Priority field was modified (e.g., Emergency, Moderate, Low Priority).
+- team_changed: Team assignment was modified (e.g., Operations, HR, Engineering, Customer Support, Accounting).
+- action_changed: Action dropdown was modified (e.g., "Escalate Immediately", "Investigate & Resolve", "Follow Standard Procedure", "Request More Information", "Monitor & Follow Up").
 - decision_saved: The expert clicked [SAVE] to commit the triage decision.
 - field_changed: Another specific ticket field was updated.
 

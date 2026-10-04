@@ -1,6 +1,6 @@
 /**
  * P1-12, P1-13 — Work Map Viewer & Evidence Replay
- * Dynamic viewer rendering the canonical WorkMap object (steps, guardrails, exceptions, teaching points).
+ * Horizontal Timeline viewer rendering the canonical WorkMap object.
  * Supports clickable evidence replay modal for screenshotRef references.
  */
 
@@ -11,7 +11,7 @@ import EvidenceReplayModal from "../components/EvidenceReplayModal";
 
 function EvidenceIcon() {
   return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
       <rect x="3" y="3" width="18" height="18" rx="2" />
       <circle cx="8.5" cy="8.5" r="1.5" />
       <polyline points="21 15 16 10 5 21" />
@@ -24,6 +24,9 @@ export default function WorkMapScreen() {
   const [selectedEvidenceStep, setSelectedEvidenceStep] = useState<WorkMapStep | null>(null);
 
   const workMap = state.workMap;
+  const [expandedStepId, setExpandedStepId] = useState<string | null>(
+    workMap?.steps?.[0]?.id || null,
+  );
 
   if (!workMap) {
     return (
@@ -44,6 +47,8 @@ export default function WorkMapScreen() {
     );
   }
 
+  const activeStep = workMap.steps.find((s) => s.id === expandedStepId) || null;
+
   return (
     <div
       style={{
@@ -51,36 +56,37 @@ export default function WorkMapScreen() {
         overflow: "hidden",
         display: "flex",
         flexDirection: "column",
+        background: "var(--bg-app)",
       }}
     >
-      {/* Header */}
+      {/* Header (Part 7: Minimal, clean header) */}
       <div
         style={{
-          background: "linear-gradient(135deg, rgba(99,102,241,0.1), rgba(139,92,246,0.08))",
           borderBottom: "1px solid var(--border-subtle)",
-          padding: "20px 28px",
+          padding: "16px 28px",
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
+          background: "var(--bg-surface)",
           flexShrink: 0,
         }}
       >
         <div>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <h1 style={{ marginBottom: 4, fontSize: 20 }}>🗺️ Work Map</h1>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <h1 style={{ margin: 0, fontSize: 18, fontWeight: 700, letterSpacing: "-0.01em" }}>Work Map</h1>
             {workMap.confirmedByExpert ? (
               <span
                 style={{
                   fontSize: 11,
-                  fontWeight: 700,
+                  fontWeight: 600,
                   color: "var(--success)",
                   background: "var(--success-dim)",
-                  border: "1px solid rgba(16,185,129,0.3)",
-                  padding: "3px 10px",
-                  borderRadius: "var(--radius-pill)",
+                  border: "1px solid rgba(16,185,129,0.25)",
+                  padding: "2px 8px",
+                  borderRadius: "var(--radius-sm)",
                 }}
               >
-                ✓ Expert Confirmed
+                Expert Confirmed
               </span>
             ) : (
               <span
@@ -88,16 +94,16 @@ export default function WorkMapScreen() {
                   fontSize: 11,
                   color: "var(--warning)",
                   background: "var(--warning-dim)",
-                  padding: "3px 10px",
-                  borderRadius: "var(--radius-pill)",
+                  padding: "2px 8px",
+                  borderRadius: "var(--radius-sm)",
                 }}
               >
                 Unconfirmed
               </span>
             )}
           </div>
-          <p style={{ color: "var(--text-secondary)", fontSize: 13, marginTop: 2 }}>
-            Expert: <b>{workMap.expertName || "Expert Triage Practitioner"}</b> · {workMap.steps.length} learned decision steps
+          <p style={{ color: "var(--text-muted)", fontSize: 12.5, marginTop: 4, margin: 0 }}>
+            Expert: {workMap.expertName || "Triage Practitioner"} · {workMap.steps.length} learned steps
           </p>
         </div>
         <button
@@ -105,274 +111,428 @@ export default function WorkMapScreen() {
           className="btn btn-primary"
           onClick={startTraining}
         >
-          🎓 Start Training
+          Start Training
         </button>
       </div>
 
-      {/* Content Area */}
+      {/* Main Content Area */}
       <div
         className="scroll-y"
-        style={{ flex: 1, padding: "24px 28px", display: "flex", gap: 24, flexWrap: "wrap", alignContent: "flex-start" }}
+        style={{
+          flex: 1,
+          padding: "24px 28px",
+          display: "flex",
+          flexDirection: "column",
+          gap: 24,
+        }}
       >
-        {/* Summary */}
-        {workMap.summary && (
-          <div className="card fade-in" style={{ width: "100%", padding: "16px 20px" }}>
-            <h3 style={{ marginBottom: 8, fontSize: 14 }}>Summary</h3>
-            <p style={{ fontSize: 13, lineHeight: 1.7, color: "var(--text-secondary)", margin: 0 }}>
-              {workMap.summary}
-            </p>
-          </div>
-        )}
-
-        {/* Global Guardrails */}
-        {workMap.guardrails && workMap.guardrails.length > 0 && (
-          <div className="card fade-in" style={{ flex: "1 1 300px", padding: "16px 20px" }}>
-            <h3 style={{ marginBottom: 12, fontSize: 14, color: "var(--danger)" }}>🚨 Global Guardrails</h3>
-            <ul className="flex-col gap-2" style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 8 }}>
-              {workMap.guardrails.map((g, i) => (
-                <li key={i} style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
-                  <span
-                    style={{
-                      flexShrink: 0,
-                      width: 18,
-                      height: 18,
-                      borderRadius: "50%",
-                      background: "var(--danger-dim)",
-                      border: "1px solid rgba(239,68,68,0.3)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      fontSize: 10,
-                      fontWeight: 700,
-                      color: "var(--danger)",
-                    }}
-                  >
-                    !
-                  </span>
-                  <span style={{ fontSize: 12.5, lineHeight: 1.5, color: "var(--text-secondary)" }}>{g}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-
-        {/* Global Exceptions */}
-        {workMap.exceptions && workMap.exceptions.length > 0 && (
-          <div className="card fade-in" style={{ flex: "1 1 300px", padding: "16px 20px" }}>
-            <h3 style={{ marginBottom: 12, fontSize: 14, color: "var(--info)" }}>💡 Exceptions</h3>
-            <ul className="flex-col gap-2" style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 8 }}>
-              {workMap.exceptions.map((ex, i) => (
-                <li key={i} style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
-                  <span style={{ color: "var(--info)", flexShrink: 0, lineHeight: 1 }}>→</span>
-                  <span style={{ fontSize: 12.5, lineHeight: 1.5, color: "var(--text-secondary)" }}>{ex}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-
-        {/* Dynamic WorkMap Steps List */}
-        <div style={{ width: "100%" }}>
-          <h3 style={{ marginBottom: 16, fontSize: 15 }}>Steps · {workMap.steps.length} learned decisions</h3>
-          <div className="flex-col gap-4" style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-            {workMap.steps.map((step) => (
+        {/* Summary & Global Rules (Part 8: Compact summary section) */}
+        {(workMap.summary || (workMap.guardrails && workMap.guardrails.length > 0)) && (
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: workMap.summary && workMap.guardrails?.length ? "1fr 1fr" : "1fr",
+              gap: 16,
+              flexShrink: 0,
+            }}
+          >
+            {workMap.summary && (
               <div
-                key={step.id}
-                id={`step-${step.id}`}
-                className="card fade-in"
-                style={{ overflow: "visible", border: "1px solid var(--border-subtle)" }}
+                className="card"
+                style={{
+                  padding: "14px 18px",
+                  border: "1px solid var(--border-subtle)",
+                  background: "var(--bg-surface)",
+                }}
               >
-                <div style={{ display: "grid", gridTemplateColumns: "auto 1fr", gap: 0 }}>
-                  {/* Step number badge */}
+                <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", color: "var(--text-muted)", marginBottom: 4 }}>
+                  Workflow Overview
+                </div>
+                <p style={{ fontSize: 12.5, lineHeight: 1.5, color: "var(--text-secondary)", margin: 0 }}>
+                  {workMap.summary}
+                </p>
+              </div>
+            )}
+
+            {workMap.guardrails && workMap.guardrails.length > 0 && (
+              <div
+                className="card"
+                style={{
+                  padding: "14px 18px",
+                  border: "1px solid var(--border-subtle)",
+                  background: "var(--bg-surface)",
+                }}
+              >
+                <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", color: "var(--danger)", marginBottom: 6 }}>
+                  Global Guardrails
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                  {workMap.guardrails.map((g, i) => (
+                    <div key={i} style={{ fontSize: 12, color: "var(--text-secondary)", display: "flex", gap: 6, alignItems: "flex-start" }}>
+                      <span style={{ color: "var(--danger)", fontWeight: 700 }}>!</span>
+                      <span>{g}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Section Heading */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <h2 style={{ fontSize: 14, fontWeight: 600, color: "var(--text-secondary)", margin: 0 }}>
+            Chronological Decision Sequence
+          </h2>
+          <span style={{ fontSize: 12, color: "var(--text-muted)" }}>
+            Select a step to view rationale
+          </span>
+        </div>
+
+        {/* PART 1 & 2 — HORIZONTAL TIMELINE */}
+        <div
+          style={{
+            overflowX: "auto",
+            paddingBottom: 12,
+            paddingTop: 8,
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              alignItems: "flex-end",
+              gap: 16,
+              minWidth: "max-content",
+            }}
+          >
+            {workMap.steps.map((step, idx) => {
+              const isSelected = step.id === expandedStepId;
+              const hasNext = idx < workMap.steps.length - 1;
+
+              return (
+                <div
+                  key={step.id}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 16,
+                  }}
+                >
+                  {/* Timeline Column (Show Instance button + Step Block) */}
                   <div
                     style={{
-                      width: 52,
                       display: "flex",
-                      alignItems: "flex-start",
-                      justifyContent: "center",
-                      paddingTop: 18,
+                      flexDirection: "column",
+                      alignItems: "center",
+                      width: 220,
                     }}
                   >
+                    {/* PART 2 — Show instance button ABOVE the corresponding block */}
+                    {step.screenshotRef ? (
+                      <button
+                        className="btn btn-xs btn-secondary"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedEvidenceStep(step);
+                        }}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 5,
+                          fontSize: 11,
+                          padding: "3px 10px",
+                          borderRadius: "var(--radius-pill)",
+                          marginBottom: 8,
+                          border: "1px solid var(--border-subtle)",
+                          background: "var(--bg-raised)",
+                          color: "var(--brand-primary)",
+                          cursor: "pointer",
+                          transition: "all 0.15s ease",
+                        }}
+                        title="Show captured screen frame"
+                      >
+                        <EvidenceIcon />
+                        <span>Show instance</span>
+                      </button>
+                    ) : (
+                      <div style={{ height: 26, marginBottom: 8 }} />
+                    )}
+
+                    {/* Step Block */}
                     <div
+                      id={`step-${step.id}`}
+                      onClick={() => setExpandedStepId(isSelected ? null : step.id)}
                       style={{
-                        width: 32,
-                        height: 32,
-                        borderRadius: "50%",
-                        background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        fontSize: 13,
-                        fontWeight: 700,
-                        color: "#fff",
-                        flexShrink: 0,
-                        boxShadow: "0 0 12px rgba(99,102,241,0.4)",
+                        width: "100%",
+                        padding: 14,
+                        borderRadius: "var(--radius-md)",
+                        background: isSelected ? "var(--bg-raised)" : "var(--bg-surface)",
+                        border: isSelected
+                          ? "1.5px solid var(--brand-primary)"
+                          : "1px solid var(--border-subtle)",
+                        boxShadow: isSelected
+                          ? "0 4px 16px rgba(99,102,241,0.15)"
+                          : "0 2px 4px rgba(0,0,0,0.2)",
+                        cursor: "pointer",
+                        transition: "all 0.2s ease",
+                        userSelect: "none",
                       }}
                     >
-                      {step.stepNumber}
-                    </div>
-                  </div>
+                      {/* Top Row: Step Number & Ticket ID */}
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          marginBottom: 8,
+                        }}
+                      >
+                        <span
+                          style={{
+                            fontFamily: "var(--font-mono)",
+                            fontSize: 11,
+                            fontWeight: 700,
+                            color: isSelected ? "var(--brand-primary)" : "var(--text-muted)",
+                          }}
+                        >
+                          STEP {String(step.stepNumber).padStart(2, "0")}
+                        </span>
 
-                  {/* Step details */}
-                  <div style={{ padding: "16px 20px 16px 4px" }}>
-                    {/* Top row */}
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 10, flexWrap: "wrap" }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
                         {step.ticketId && (
                           <span
                             style={{
-                              fontFamily: "monospace",
+                              fontFamily: "var(--font-mono)",
                               fontSize: 11,
                               fontWeight: 700,
                               color: "var(--brand-primary)",
                               background: "var(--brand-primary-dim)",
-                              border: "1px solid var(--brand-primary-glow)",
-                              padding: "2px 8px",
+                              padding: "1px 6px",
                               borderRadius: "var(--radius-sm)",
                             }}
                           >
                             {step.ticketId}
                           </span>
                         )}
-                        <span style={{ fontSize: 13.5, fontWeight: 700, color: "var(--text-primary)" }}>
-                          {step.observedAction}
-                        </span>
                       </div>
 
-                      {/* Evidence Replay Button (Task P1-13) */}
-                      {step.screenshotRef && (
-                        <button
-                          className="btn btn-sm btn-secondary"
-                          onClick={() => setSelectedEvidenceStep(step)}
-                          title={`View evidence: ${step.screenshotRef}`}
-                          style={{ display: "flex", alignItems: "center", gap: 6 }}
-                        >
-                          <EvidenceIcon />
-                          <span>Replay Evidence</span>
-                        </button>
-                      )}
-                    </div>
-
-                    {/* Decision chip */}
-                    <div style={{ marginBottom: 14 }}>
-                      <span
+                      {/* Action summary title */}
+                      <div
                         style={{
-                          display: "inline-block",
-                          padding: "5px 12px",
-                          borderRadius: "var(--radius-pill)",
-                          background: "var(--bg-raised)",
-                          border: "1px solid var(--border-default)",
-                          fontSize: 12,
+                          fontSize: 12.5,
                           fontWeight: 600,
                           color: "var(--text-primary)",
+                          marginBottom: 8,
+                          whiteSpace: "nowrap",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
                         }}
+                        title={step.observedAction}
                       >
-                        ⚡ {step.decision}
-                      </span>
-                    </div>
-
-                    {/* Grid of details */}
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px 24px" }}>
-                      <div>
-                        <div className="field-label" style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", color: "var(--text-muted)", marginBottom: 4 }}>
-                          Expert Reasoning
-                        </div>
-                        <p style={{ fontSize: 12.5, lineHeight: 1.5, color: "var(--text-secondary)", margin: 0 }}>
-                          {step.expertReason}
-                        </p>
-                        {step.expertQuote && (
-                          <blockquote
-                            style={{
-                              marginTop: 8,
-                              fontSize: 12,
-                              fontStyle: "italic",
-                              color: "var(--text-muted)",
-                              borderLeft: "2px solid var(--brand-primary-glow)",
-                              paddingLeft: 10,
-                              margin: "8px 0 0 0",
-                            }}
-                          >
-                            "{step.expertQuote}"
-                          </blockquote>
-                        )}
+                        {step.observedAction}
                       </div>
 
-                      <div>
-                        <div className="field-label" style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", color: "var(--text-muted)", marginBottom: 4 }}>
-                          Guardrails
-                        </div>
-                        {step.guardrails && step.guardrails.length > 0 ? (
-                          step.guardrails.map((g, i) => (
-                            <div
-                              key={i}
-                              style={{
-                                fontSize: 12,
-                                color: "var(--danger)",
-                                background: "var(--danger-dim)",
-                                borderRadius: "var(--radius-sm)",
-                                padding: "4px 8px",
-                                marginBottom: 4,
-                                borderLeft: "2px solid var(--danger)",
-                              }}
-                            >
-                              {g}
-                            </div>
-                          ))
-                        ) : (
-                          <span style={{ fontSize: 12, color: "var(--text-muted)" }}>—</span>
-                        )}
+                      {/* Decision chip */}
+                      <div
+                        style={{
+                          fontSize: 11,
+                          fontWeight: 500,
+                          color: "var(--text-secondary)",
+                          background: "var(--bg-app)",
+                          border: "1px solid var(--border-subtle)",
+                          padding: "3px 8px",
+                          borderRadius: "var(--radius-sm)",
+                          whiteSpace: "nowrap",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                        }}
+                        title={step.decision}
+                      >
+                        {step.decision}
                       </div>
-
-                      <div>
-                        <div className="field-label" style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", color: "var(--text-muted)", marginBottom: 4 }}>
-                          Teaching Point
-                        </div>
-                        <div
-                          style={{
-                            fontSize: 12.5,
-                            color: "var(--info)",
-                            background: "var(--info-dim)",
-                            borderRadius: "var(--radius-sm)",
-                            padding: "6px 10px",
-                          }}
-                        >
-                          💡 {step.teachingPoint}
-                        </div>
-                      </div>
-
-                      {step.exceptions && step.exceptions.length > 0 && (
-                        <div>
-                          <div className="field-label" style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", color: "var(--text-muted)", marginBottom: 4 }}>
-                            Exceptions
-                          </div>
-                          {step.exceptions.map((ex, i) => (
-                            <div key={i} style={{ fontSize: 12, color: "var(--text-secondary)", lineHeight: 1.4, marginBottom: 4 }}>
-                              • {ex}
-                            </div>
-                          ))}
-                        </div>
-                      )}
                     </div>
                   </div>
+
+                  {/* Visual connector line between steps */}
+                  {hasNext && (
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        color: "var(--border-default)",
+                        fontSize: 16,
+                        marginBottom: 36,
+                        userSelect: "none",
+                      }}
+                    >
+                      →
+                    </div>
+                  )}
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 
-        {/* CTA */}
-        <div style={{ width: "100%", display: "flex", justifyContent: "center", paddingBottom: 24, paddingTop: 12 }}>
+        {/* PART 1 — EXPANDED STEP DETAIL PANEL */}
+        {activeStep && (
+          <div
+            className="card fade-in"
+            style={{
+              padding: 20,
+              background: "var(--bg-surface)",
+              border: "1px solid var(--border-default)",
+              borderRadius: "var(--radius-md)",
+              display: "flex",
+              flexDirection: "column",
+              gap: 16,
+            }}
+          >
+            {/* Expanded Header Row */}
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                borderBottom: "1px solid var(--border-subtle)",
+                paddingBottom: 12,
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <span
+                  style={{
+                    fontFamily: "var(--font-mono)",
+                    fontSize: 12,
+                    fontWeight: 700,
+                    color: "var(--brand-primary)",
+                    background: "var(--brand-primary-dim)",
+                    padding: "3px 8px",
+                    borderRadius: "var(--radius-sm)",
+                  }}
+                >
+                  Step {activeStep.stepNumber} {activeStep.ticketId ? `· ${activeStep.ticketId}` : ""}
+                </span>
+                <h3 style={{ fontSize: 14, margin: 0, color: "var(--text-primary)" }}>
+                  {activeStep.observedAction}
+                </h3>
+              </div>
+
+              <div
+                style={{
+                  fontSize: 12,
+                  fontWeight: 600,
+                  color: "var(--brand-primary)",
+                  background: "var(--brand-primary-dim)",
+                  border: "1px solid var(--brand-primary-glow)",
+                  padding: "4px 12px",
+                  borderRadius: "var(--radius-pill)",
+                }}
+              >
+                {activeStep.decision}
+              </div>
+            </div>
+
+            {/* Grid of step details */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px 24px" }}>
+              {/* Expert Reasoning & Quote */}
+              <div>
+                <div className="field-label" style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", color: "var(--text-muted)", marginBottom: 6 }}>
+                  Expert Rationale
+                </div>
+                <p style={{ fontSize: 12.5, lineHeight: 1.5, color: "var(--text-secondary)", margin: 0 }}>
+                  {activeStep.expertReason}
+                </p>
+                {activeStep.expertQuote && (
+                  <blockquote
+                    style={{
+                      marginTop: 10,
+                      fontSize: 12,
+                      fontStyle: "italic",
+                      color: "var(--text-muted)",
+                      borderLeft: "2px solid var(--brand-primary)",
+                      paddingLeft: 10,
+                      margin: "10px 0 0 0",
+                    }}
+                  >
+                    "{activeStep.expertQuote}"
+                  </blockquote>
+                )}
+              </div>
+
+              {/* Teaching Point */}
+              <div>
+                <div className="field-label" style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", color: "var(--text-muted)", marginBottom: 6 }}>
+                  Teaching Point
+                </div>
+                <div
+                  style={{
+                    fontSize: 12.5,
+                    color: "var(--info)",
+                    background: "var(--info-dim)",
+                    border: "1px solid rgba(59,130,246,0.2)",
+                    borderRadius: "var(--radius-sm)",
+                    padding: "8px 12px",
+                    lineHeight: 1.5,
+                  }}
+                >
+                  {activeStep.teachingPoint}
+                </div>
+              </div>
+
+              {/* Guardrails */}
+              {activeStep.guardrails && activeStep.guardrails.length > 0 && (
+                <div>
+                  <div className="field-label" style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", color: "var(--danger)", marginBottom: 6 }}>
+                    Guardrails
+                  </div>
+                  {activeStep.guardrails.map((g, i) => (
+                    <div
+                      key={i}
+                      style={{
+                        fontSize: 12,
+                        color: "var(--danger)",
+                        background: "var(--danger-dim)",
+                        borderRadius: "var(--radius-sm)",
+                        padding: "4px 8px",
+                        marginBottom: 4,
+                        borderLeft: "2px solid var(--danger)",
+                      }}
+                    >
+                      {g}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Exceptions */}
+              {activeStep.exceptions && activeStep.exceptions.length > 0 && (
+                <div>
+                  <div className="field-label" style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", color: "var(--text-muted)", marginBottom: 6 }}>
+                    Exceptions
+                  </div>
+                  {activeStep.exceptions.map((ex, i) => (
+                    <div key={i} style={{ fontSize: 12, color: "var(--text-secondary)", lineHeight: 1.4, marginBottom: 4 }}>
+                      • {ex}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Start Training CTA */}
+        <div style={{ display: "flex", justifyContent: "center", paddingTop: 8, paddingBottom: 16 }}>
           <button
             className="btn btn-primary btn-lg"
             onClick={startTraining}
-            style={{ minWidth: 240 }}
+            style={{ minWidth: 220 }}
           >
-            🎓 Start New Hire Training
+            Start New Hire Training
           </button>
         </div>
       </div>
 
-      {/* Task P1-13: Evidence Replay Modal */}
+      {/* Evidence Replay Modal (Part 3 & 6) */}
       <EvidenceReplayModal
         step={selectedEvidenceStep}
         onClose={() => setSelectedEvidenceStep(null)}
@@ -380,3 +540,4 @@ export default function WorkMapScreen() {
     </div>
   );
 }
+

@@ -20,24 +20,24 @@ REQUIRED_TICKET_FIELDS = {
     "action",
     "expertReasoning",
 }
-VALID_PRIORITIES = {"P1", "P2", "P3"}
-VALID_TEAMS = {"Infrastructure", "Support", "Engineering"}
+VALID_PRIORITIES = {"Emergency", "Moderate", "Low Priority"}
+VALID_TEAMS = {"Operations", "HR", "Engineering", "Customer Support", "Accounting"}
 VALID_ACTIONS = {
-    "Immediate escalation",
-    "Normal troubleshooting",
-    "STOP normal processing + escalate",
-    "Send reset procedure",
-    "Investigate performance",
+    "Escalate Immediately",
+    "Investigate & Resolve",
+    "Follow Standard Procedure",
+    "Request More Information",
+    "Monitor & Follow Up",
 }
 
 
 def test_demo_tickets_valid():
     tickets = json.loads(DEMO_TICKETS_PATH.read_text())
     assert isinstance(tickets, list), "demo-tickets.json must be a JSON array"
-    assert len(tickets) == 6, f"Expected 6 tickets (T001-T006), got {len(tickets)}"
+    assert len(tickets) == 7, f"Expected 7 tickets (T001-T007), got {len(tickets)}"
 
     ticket_ids = [t.get("id") for t in tickets]
-    assert ticket_ids == ["T001", "T002", "T003", "T004", "T005", "T006"]
+    assert ticket_ids == ["T001", "T002", "T003", "T004", "T005", "T006", "T007"]
 
     for ticket in tickets:
         missing = REQUIRED_TICKET_FIELDS - ticket.keys()
@@ -121,10 +121,10 @@ def test_fixtures_trainee_case_valid():
     case = json.loads(case_file.read_text())
     assert case["id"] == "T_NEW_01"
     assert "scenario" in case
-    assert case["expected"]["priority"] == "P1"
+    assert case["expected"]["priority"] == "Emergency"
     assert case["expected"]["team"] == "Engineering"
-    assert case["expected"]["action"] == "STOP + escalate"
-    assert case["canonicalMistake"]["priority"] == "P3"
+    assert case["expected"]["action"] == "Escalate Immediately"
+    assert case["canonicalMistake"]["priority"] == "Low Priority"
 
 
 def test_fixtures_tutor_intervention_valid():

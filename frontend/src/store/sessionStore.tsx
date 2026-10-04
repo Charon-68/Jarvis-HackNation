@@ -21,6 +21,7 @@ import type {
 } from "../types/index";
 import { mockApi } from "../mocks/mockServices";
 import { HybridApprenticeApi } from "../adapters/apprentice-api";
+import { evidenceStore } from "./evidenceStore";
 
 const apprenticeApi = new HybridApprenticeApi(mockApi);
 
@@ -144,6 +145,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(reducer, initialState);
 
   const startExpertSession = useCallback(async (expertName = "Expert") => {
+    evidenceStore.clear();
     dispatch({ type: "LOADING", loading: true });
     try {
       const session = await apprenticeApi.createSession({ mode: "expert", expertName });
@@ -199,6 +201,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const resetSession = useCallback(() => {
+    evidenceStore.clear();
     dispatch({ type: "RESET" });
   }, []);
 

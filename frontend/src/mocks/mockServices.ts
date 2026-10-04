@@ -57,15 +57,15 @@ const MOCK_WORK_MAP: WorkMap = {
   confirmedByExpert: true,
   confirmedAt: new Date().toISOString(),
   summary:
-    "Expert demonstrated scope-first triage across five tickets, surfacing the data-loss guardrail and multi-customer escalation logic.",
+    "Expert demonstrated scope-first triage across production outage, payroll, and data-loss incidents, applying safety guardrails.",
   guardrails: [
-    "Possible data loss → STOP normal processing + escalate.",
-    "Full outage → escalate immediately.",
-    "Multi-customer API failure → treat as systemic incident.",
+    "Possible data loss → Escalate Immediately.",
+    "Full outage → Escalate Immediately to Operations.",
+    "Payroll calculation failure → Investigate & Resolve with Accounting.",
   ],
   exceptions: [
-    "Single-user login issues are routine unless wider impact emerges.",
-    "Slow performance for one customer differs from slow performance for many.",
+    "Routine access requests follow standard procedure.",
+    "Single customer slowness differs from systemic API outage.",
   ],
   steps: [
     {
@@ -74,12 +74,12 @@ const MOCK_WORK_MAP: WorkMap = {
       timestampMs: 8000,
       ticketId: "T001",
       observedAction: "Opened T001 — Production website down (All customers)",
-      decision: "P1 · Infrastructure · Immediate escalation",
+      decision: "Emergency · Operations · Escalate Immediately",
       expertReason:
-        "The whole production site is down, so it is P1.",
-      guardrails: ["Full outage affects everyone → P1 and immediate escalation."],
+        "The whole production site is down, requiring Emergency escalation to Operations.",
+      guardrails: ["Full production outage affects everyone → Emergency and Escalate Immediately."],
       exceptions: [],
-      teachingPoint: "P1 is driven by impact, not just the wording of the complaint.",
+      teachingPoint: "Priority is driven by scope and business impact.",
       expertQuote:
         "I first check whether one customer or everyone is affected.",
       screenshotRef: "screenshot_t001_p1.png",
@@ -90,16 +90,14 @@ const MOCK_WORK_MAP: WorkMap = {
       stepNumber: 2,
       timestampMs: 33000,
       ticketId: "T002",
-      observedAction: "Opened T002 — One employee cannot log in (Single user)",
-      decision: "P3 · Support · Normal troubleshooting",
+      observedAction: "Opened T002 — Monthly payroll calculation failing",
+      decision: "Emergency · Accounting · Investigate & Resolve",
       expertReason:
-        "Only one person is affected, so I start normal troubleshooting.",
-      guardrails: ["Do not escalate a single-user issue without wider impact."],
-      exceptions: [
-        "If other users are later affected, re-evaluate immediately.",
-      ],
-      teachingPoint: "Check whether the issue is isolated.",
-      expertQuote: "Single user? Routine troubleshooting.",
+        "Company-wide payroll failure requires urgent technical investigation by Accounting.",
+      guardrails: ["Payroll processing block -> Emergency priority."],
+      exceptions: [],
+      teachingPoint: "Financial disbursement issues are critical business risks.",
+      expertQuote: "Payroll calculation block requires immediate investigation.",
       sourceEventIds: ["evt_005", "evt_006"],
     },
     {
@@ -109,14 +107,14 @@ const MOCK_WORK_MAP: WorkMap = {
       ticketId: "T003",
       observedAction:
         "Opened T003 — Customer data disappeared after update (Potential data loss)",
-      decision: "P1 · Engineering · STOP normal processing + escalate",
+      decision: "Emergency · Engineering · Escalate Immediately",
       expertReason:
         "Missing customer data can become worse if we ask them to change or retry things.",
-      guardrails: ["Possible data loss → STOP normal processing and escalate."],
+      guardrails: ["Possible data loss → Escalate Immediately."],
       exceptions: [],
       teachingPoint: "Protect evidence/data before troubleshooting.",
       expertQuote:
-        "Possible data loss means we stop and escalate. We don't ask the customer to modify or retry data.",
+        "Possible data loss means we stop normal processing and escalate immediately.",
       screenshotRef: "screenshot_t003_stop.png",
       sourceEventIds: ["evt_007", "evt_008", "evt_009"],
     },
@@ -124,34 +122,34 @@ const MOCK_WORK_MAP: WorkMap = {
       id: "step_004",
       stepNumber: 4,
       timestampMs: 80000,
-      ticketId: "T005",
+      ticketId: "T004",
       observedAction:
-        "Opened T005 — API returning errors for many customers (Multiple customers)",
-      decision: "P1 · Engineering · Immediate escalation",
+        "Opened T004 — Dashboard slowness for multiple teams",
+      decision: "Moderate · Engineering · Investigate & Resolve",
       expertReason:
-        "Many customers seeing API errors means it is probably systemic.",
-      guardrails: ["Multi-customer API failure → incident handling."],
+        "Multiple users seeing dashboard slowness indicates a systemic performance issue.",
+      guardrails: ["Multi-user slowness → Investigate & Resolve."],
       exceptions: [],
       teachingPoint: "Use scope to distinguish local vs systemic issues.",
       expertQuote:
-        "Multiple customers seeing the same API error indicates a systemic incident.",
+        "Multiple users seeing dashboard slowness indicates a systemic performance issue.",
       sourceEventIds: ["evt_011", "evt_012"],
     },
     {
       id: "step_005",
       stepNumber: 5,
       timestampMs: 90000,
-      ticketId: "T006",
+      ticketId: "T005",
       observedAction:
-        "Opened T006 — Dashboard slow for several customers (Multiple customers)",
-      decision: "P2 · Engineering · Investigate performance",
+        "Opened T005 — New hire access permissions incomplete",
+      decision: "Moderate · HR · Follow Standard Procedure",
       expertReason:
-        "Slow for several customers is a performance problem, not just one user's browser.",
-      guardrails: ["Multiple reports → investigate system-wide impact."],
-      exceptions: ["Single slow customer is usually local; multiple is systemic."],
-      teachingPoint: "Repeated reports change the severity.",
+        "HR onboarding access provisioning follows established standard procedures.",
+      guardrails: ["Follow standard HR provisioning workflow."],
+      exceptions: [],
+      teachingPoint: "Routine onboarding requests follow standard procedure.",
       expertQuote:
-        "Several customers with performance issues indicate a broader performance problem.",
+        "Role-based access follows established HR procedures.",
       sourceEventIds: ["evt_013", "evt_014"],
     },
   ] as WorkMapStep[],
@@ -198,12 +196,12 @@ export class MockApprenticeApi implements ApprenticeApi {
   ): Promise<DecisionEvaluationResult> {
     await new Promise((r) => setTimeout(r, 400));
 
-    // Deterministic data-loss guardrail check for T007 (training case)
-    if (attempt.ticketId === "T007") {
+    // Deterministic data-loss guardrail check for T007 / T_NEW_01 (training case)
+    if (attempt.ticketId === "T007" || attempt.ticketId === "T_NEW_01") {
       const isCorrect =
-        attempt.priority === "P1" &&
+        attempt.priority === "Emergency" &&
         attempt.team === "Engineering" &&
-        attempt.action === "STOP normal processing + escalate";
+        attempt.action === "Escalate Immediately";
 
       if (!isCorrect) {
         const intervention: TutorIntervention = {
@@ -216,11 +214,11 @@ export class MockApprenticeApi implements ApprenticeApi {
           correct: false,
           severity: "critical",
           message:
-            "This case involves possible data loss. The expert rule is: STOP normal processing and escalate to Engineering immediately.",
+            "This case involves possible data loss. The expert rule is: Emergency priority, Engineering team, and Escalate Immediately.",
           reason:
-            "Possible data loss is a stop-and-escalate case. Asking the customer to modify or retry data could destroy evidence.",
+            "Possible data loss is a critical safety guardrail. Asking the customer to modify or retry data could destroy evidence.",
           guardrail:
-            "Possible data loss → STOP normal processing + escalate.",
+            "Possible data loss → Emergency · Engineering · Escalate Immediately.",
           expertEvidence: {
             workMapStepId: "step_003",
             timestampMs: 50000,

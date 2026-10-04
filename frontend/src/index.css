@@ -39,15 +39,27 @@
   --info-dim: rgba(59, 130, 246, 0.15);
 
   /* Priority badges */
-  --p1-bg: rgba(239, 68, 68, 0.15);
-  --p1-text: #f87171;
-  --p1-border: rgba(239, 68, 68, 0.35);
-  --p2-bg: rgba(245, 158, 11, 0.15);
-  --p2-text: #fbbf24;
-  --p2-border: rgba(245, 158, 11, 0.35);
-  --p3-bg: rgba(16, 185, 129, 0.15);
-  --p3-text: #34d399;
-  --p3-border: rgba(16, 185, 129, 0.35);
+  --emergency-bg: rgba(239, 68, 68, 0.15);
+  --emergency-text: #f87171;
+  --emergency-border: rgba(239, 68, 68, 0.35);
+
+  --moderate-bg: rgba(245, 158, 11, 0.15);
+  --moderate-text: #fbbf24;
+  --moderate-border: rgba(245, 158, 11, 0.35);
+
+  --low-bg: rgba(234, 179, 8, 0.15);
+  --low-text: #facc15;
+  --low-border: rgba(234, 179, 8, 0.35);
+
+  --p1-bg: var(--emergency-bg);
+  --p1-text: var(--emergency-text);
+  --p1-border: var(--emergency-border);
+  --p2-bg: var(--moderate-bg);
+  --p2-text: var(--moderate-text);
+  --p2-border: var(--moderate-border);
+  --p3-bg: var(--low-bg);
+  --p3-text: var(--low-text);
+  --p3-border: var(--low-border);
 
   /* Capture status */
   --capture-active: #10b981;
@@ -215,6 +227,10 @@ code, pre {
   font-weight: 600;
   letter-spacing: 0.4px;
 }
+
+.badge-emergency { background: var(--emergency-bg); color: var(--emergency-text); border: 1px solid var(--emergency-border); }
+.badge-moderate  { background: var(--moderate-bg);  color: var(--moderate-text);  border: 1px solid var(--moderate-border); }
+.badge-low       { background: var(--low-bg);       color: var(--low-text);       border: 1px solid var(--low-border); }
 
 .badge-p1 { background: var(--p1-bg); color: var(--p1-text); border: 1px solid var(--p1-border); }
 .badge-p2 { background: var(--p2-bg); color: var(--p2-text); border: 1px solid var(--p2-border); }

@@ -21,26 +21,38 @@ interface ActiveTicketProps {
   isSaving?: boolean;
 }
 
-const PRIORITIES: TicketPriority[] = ["P1", "P2", "P3"];
-const TEAMS: TicketTeam[] = ["Infrastructure", "Support", "Engineering"];
+const PRIORITIES: TicketPriority[] = ["Emergency", "Moderate", "Low Priority"];
+const TEAMS: TicketTeam[] = [
+  "Operations",
+  "HR",
+  "Engineering",
+  "Customer Support",
+  "Accounting",
+];
 const ACTIONS: TicketAction[] = [
-  "Immediate escalation",
-  "Normal troubleshooting",
-  "STOP normal processing + escalate",
-  "Send reset procedure",
-  "Investigate performance",
+  "Escalate Immediately",
+  "Investigate & Resolve",
+  "Follow Standard Procedure",
+  "Request More Information",
+  "Monitor & Follow Up",
 ];
 
 function priorityColor(p: string) {
-  if (p === "P1") return "var(--p1-text)";
-  if (p === "P2") return "var(--p2-text)";
-  return "var(--p3-text)";
+  if (p === "Emergency") return "var(--emergency-text)";
+  if (p === "Moderate") return "var(--moderate-text)";
+  return "var(--low-text)";
 }
 
 function priorityBg(p: string) {
-  if (p === "P1") return "var(--p1-bg)";
-  if (p === "P2") return "var(--p2-bg)";
-  return "var(--p3-bg)";
+  if (p === "Emergency") return "var(--emergency-bg)";
+  if (p === "Moderate") return "var(--moderate-bg)";
+  return "var(--low-bg)";
+}
+
+function priorityBorder(p: string) {
+  if (p === "Emergency") return "var(--emergency-border)";
+  if (p === "Moderate") return "var(--moderate-border)";
+  return "var(--low-border)";
 }
 
 export default function ActiveTicket({
@@ -52,17 +64,17 @@ export default function ActiveTicket({
   mode = "expert",
   isSaving,
 }: ActiveTicketProps) {
-  const [priority, setPriority] = useState<TicketPriority>("P3");
-  const [team, setTeam] = useState<TicketTeam>("Support");
-  const [action, setAction] = useState<TicketAction>("Normal troubleshooting");
+  const [priority, setPriority] = useState<TicketPriority>("Low Priority");
+  const [team, setTeam] = useState<TicketTeam>("Customer Support");
+  const [action, setAction] = useState<TicketAction>("Follow Standard Procedure");
 
   // Reset selectors when ticket changes
   const prevTicket = useState<string | null>(null);
   const [lastTicketId, setLastTicketId] = prevTicket;
   if (ticket && ticket.id !== lastTicketId) {
-    setPriority("P3");
-    setTeam("Support");
-    setAction("Normal troubleshooting");
+    setPriority(ticket.priority || "Low Priority");
+    setTeam(ticket.team || "Customer Support");
+    setAction(ticket.action || "Follow Standard Procedure");
     setLastTicketId(ticket.id);
   }
 
@@ -129,6 +141,7 @@ export default function ActiveTicket({
             borderRadius: "var(--radius-pill)",
             background: priorityBg(priority),
             color: priorityColor(priority),
+            border: `1px solid ${priorityBorder(priority)}`,
           }}
         >
           {priority}
