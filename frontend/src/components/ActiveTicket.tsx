@@ -2,7 +2,6 @@
  * P1-02, P1-04 — Active Ticket Workspace (center panel)
  * Shows ticket details, priority/team/action selectors, and Save button.
  */
-import { useState } from "react";
 import type {
   Ticket,
   TicketPriority,
@@ -66,26 +65,16 @@ export default function ActiveTicket({
   isSaving,
   onFieldChange,
 }: ActiveTicketProps) {
-  const [priority, setPriority] = useState<TicketPriority>("Low Priority");
-  const [team, setTeam] = useState<TicketTeam>("Customer Support");
-  const [action, setAction] = useState<TicketAction>("Follow Standard Procedure");
-
-  // Reset selectors when ticket changes
-  const prevTicket = useState<string | null>(null);
-  const [lastTicketId, setLastTicketId] = prevTicket;
-  if (ticket && ticket.id !== lastTicketId) {
-    setPriority(ticket.priority || "Low Priority");
-    setTeam(ticket.team || "Customer Support");
-    setAction(ticket.action || "Follow Standard Procedure");
-    setLastTicketId(ticket.id);
-  }
+  const priority = ticket?.priority ?? "Low Priority";
+  const team = ticket?.team ?? "Customer Support";
+  const action = ticket?.action ?? "Follow Standard Procedure";
 
   const canSave = !!ticket && !disabled && !isSaving;
   const intervention = evaluationResult?.intervention;
 
   const handleSave = async () => {
-    if (!canSave) return;
-    await onSave({ priority, team, action });
+    if (!canSave || !ticket) return;
+    await onSave({ priority: ticket.priority, team: ticket.team, action: ticket.action });
   };
 
   if (!ticket) {
@@ -178,7 +167,6 @@ export default function ActiveTicket({
               value={priority}
               onChange={(e) => {
                 const val = e.target.value as TicketPriority;
-                setPriority(val);
                 onClearEvaluation();
                 if (onFieldChange) onFieldChange("priority", val);
               }}
@@ -196,7 +184,6 @@ export default function ActiveTicket({
               value={team}
               onChange={(e) => {
                 const val = e.target.value as TicketTeam;
-                setTeam(val);
                 onClearEvaluation();
                 if (onFieldChange) onFieldChange("team", val);
               }}
@@ -214,7 +201,6 @@ export default function ActiveTicket({
               value={action}
               onChange={(e) => {
                 const val = e.target.value as TicketAction;
-                setAction(val);
                 onClearEvaluation();
                 if (onFieldChange) onFieldChange("action", val);
               }}

@@ -7,6 +7,7 @@ import { runTests as runCaptureLifecycleTests } from "../capture/__tests__/captu
 import { runTests as runEvaluationGateTests } from "../screens/__tests__/evaluationGate.test";
 import { runTests as runWorkMapTests } from "../screens/__tests__/workMap.test";
 import { runTests as runApprenticeApiTests } from "../adapters/__tests__/apprenticeApi.test";
+import { runTests as runTicketPersistenceTests } from "../screens/__tests__/ticketPersistence.test";
 import { runGoldenFlowIntegrationTest } from "./integration.test";
 
 async function runAll() {
@@ -17,6 +18,7 @@ async function runAll() {
   await runRealVoiceAdapterTests();
   await runCaptureLifecycleTests();
   await runEvaluationGateTests();
+  await runTicketPersistenceTests();
   await runWorkMapTests();
   await runApprenticeApiTests();
   await runGoldenFlowIntegrationTest();

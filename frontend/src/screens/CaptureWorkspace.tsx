@@ -3,7 +3,7 @@
  * Three-panel layout: Ticket Queue | Active Ticket | AI Apprentice
  * with session controls bottom bar and real ElevenLabs voice integration.
  */
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useSession } from "../store/sessionStore";
 import { listTickets, EXPERT_SEQUENCE } from "../data/ticketRepository";
 import TicketQueue from "../components/TicketQueue";
@@ -35,6 +35,9 @@ export default function CaptureWorkspace() {
 
   const [activeTicketId, setActiveTicketId] = useState<string | null>(null);
   const [solvedTicketIds, setSolvedTicketIds] = useState<string[]>([]);
+  const [ticketOverrides, setTicketOverrides] = useState<
+    Record<string, Partial<Pick<Ticket, "priority" | "team" | "action">>>
+  >({});
   const [captureState, setCaptureState] = useState<CaptureState>({ status: "idle" });
   const [elapsed, setElapsed] = useState(0);
   const [agentStatus, setAgentStatus] = useState("offline");
@@ -47,9 +50,22 @@ export default function CaptureWorkspace() {
   const pipelineRef = useRef<FramePipeline | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const tickets = listTickets();
+  const rawTickets = listTickets();
+  const tickets: Ticket[] = useMemo(
+    () =>
+      rawTickets.map((t) => ({
+        ...t,
+        ...(ticketOverrides[t.id] || {}),
+      })),
+    [rawTickets, ticketOverrides],
+  );
   const activeTicket: Ticket | null = tickets.find((t) => t.id === activeTicketId) ?? null;
   const captureStatus = captureState.status;
+
+  // Reset overrides on session change
+  useEffect(() => {
+    setTicketOverrides({});
+  }, [state.session?.id]);
 
   // Real ElevenLabs Voice Connection lifecycle & Effect Cleanup
   useEffect(() => {
@@ -207,7 +223,18 @@ export default function CaptureWorkspace() {
 
   const handleFieldChange = useCallback(
     (field: "priority" | "team" | "action", value: string) => {
-      if (!activeTicket || captureStatus !== "active") return;
+      if (!activeTicket) return;
+
+      setTicketOverrides((prev) => ({
+        ...prev,
+        [activeTicket.id]: {
+          ...prev[activeTicket.id],
+          [field]: value,
+        },
+      }));
+
+      if (captureStatus !== "active") return;
+
       const event: ScreenEvent = {
         id: genEventId(),
         sessionId: state.session?.id ?? "local",
@@ -235,6 +262,15 @@ export default function CaptureWorkspace() {
       if (!activeTicket || !state.session) return;
       setIsSaving(true);
       dispatchEvaluationResult(null);
+
+      setTicketOverrides((prev) => ({
+        ...prev,
+        [activeTicket.id]: {
+          priority: decision.priority,
+          team: decision.team,
+          action: decision.action,
+        },
+      }));
 
       try {
         const baseEvent: Omit<ScreenEvent, "id" | "type" | "description" | "newValue"> = {

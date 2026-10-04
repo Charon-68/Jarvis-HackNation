@@ -184,6 +184,21 @@ const legacyTickets: Record<string, object> = {
   T006: { ticket_id: "T006", customer: "QRS Ltd", issue: "Dashboard is slow for several customers", scope: "Multiple customers", priority: "P2", team: "Engineering", action: "Investigate performance" },
 };
 
+function parseLegacyParams(params: unknown): Record<string, any> {
+  if (!params) return {};
+  if (typeof params === "string") {
+    try {
+      return JSON.parse(params);
+    } catch {
+      return {};
+    }
+  }
+  if (typeof params === "object") {
+    return params as Record<string, any>;
+  }
+  return {};
+}
+
 function LegacyPrototype() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const sent = useRef(new Set<string>());
@@ -191,23 +206,46 @@ function LegacyPrototype() {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [loggedDecisions, setLoggedDecisions] = useState<object[]>([]);
 
-  const conversation = useConversation({
-    clientTools: {
-      get_ticket_context: (params: { ticket_id: string }) => {
-        const result = legacyTickets[params.ticket_id] ?? { ticket_id: params.ticket_id, error: "Ticket not found" };
-        console.log("get_ticket_context", params.ticket_id, result);
-        return JSON.stringify(result);
-      },
-      log_expert_decision: (params: { ticket_id: string; action_taken: string; decision_rationale: string }) => {
-        console.log("EXPERT DECISION", params);
-        setLoggedDecisions((old) => [...old, params]);
-        return JSON.stringify({ status: "logged", ...params });
-      },
-      trigger_debrief_summary: (params: { session_id: string; tickets_processed: number }) => {
-        console.log("DEBRIEF REQUEST", params);
-        return JSON.stringify({ status: "synthesis_started", session_id: params.session_id });
-      },
+  const legacyClientTools = {
+    get_ticket_context: (rawParams: unknown) => {
+      const params = parseLegacyParams(rawParams);
+      const ticketId = params.ticket_id || params.ticketId || params.id || "";
+      const result = legacyTickets[ticketId] ?? { ticket_id: ticketId, error: "Ticket not found" };
+      console.log("get_ticket_context", ticketId, result);
+      return JSON.stringify(result);
     },
+    getTicketContext: (rawParams: unknown) => {
+      const params = parseLegacyParams(rawParams);
+      const ticketId = params.ticket_id || params.ticketId || params.id || "";
+      const result = legacyTickets[ticketId] ?? { ticket_id: ticketId, error: "Ticket not found" };
+      return JSON.stringify(result);
+    },
+    log_expert_decision: (rawParams: unknown) => {
+      const params = parseLegacyParams(rawParams);
+      console.log("EXPERT DECISION", params);
+      setLoggedDecisions((old) => [...old, params]);
+      return JSON.stringify({ status: "logged", ...params });
+    },
+    logExpertDecision: (rawParams: unknown) => {
+      const params = parseLegacyParams(rawParams);
+      console.log("EXPERT DECISION", params);
+      setLoggedDecisions((old) => [...old, params]);
+      return JSON.stringify({ status: "logged", ...params });
+    },
+    trigger_debrief_summary: (rawParams: unknown) => {
+      const params = parseLegacyParams(rawParams);
+      console.log("DEBRIEF REQUEST", params);
+      return JSON.stringify({ status: "synthesis_started", session_id: params.session_id || params.sessionId });
+    },
+    triggerDebriefSummary: (rawParams: unknown) => {
+      const params = parseLegacyParams(rawParams);
+      console.log("DEBRIEF REQUEST", params);
+      return JSON.stringify({ status: "synthesis_started", session_id: params.session_id || params.sessionId });
+    },
+  };
+
+  const conversation = useConversation({
+    clientTools: legacyClientTools,
     onConnect: () => console.log("ElevenLabs connected"),
     onDisconnect: () => console.log("ElevenLabs disconnected"),
     onError: (err) => console.error("ElevenLabs error", err),
@@ -241,7 +279,7 @@ function LegacyPrototype() {
   const start = async () => {
     try {
       await navigator.mediaDevices.getUserMedia({ audio: true });
-      await conversation.startSession({ agentId: AGENT_ID });
+      await conversation.startSession({ agentId: AGENT_ID, clientTools: legacyClientTools });
       const id = conversation.getId();
       setSessionId(id);
       console.log("Conversation ID:", id);

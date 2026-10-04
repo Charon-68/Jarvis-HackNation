@@ -83,76 +83,116 @@ export function useElevenLabsVoiceAgent(
   const emitMessageRef = useRef(emitMessage);
   emitMessageRef.current = emitMessage;
 
-  const clientTools = useMemo(() => ({
-    get_ticket_context: (params: { ticket_id?: string; ticketId?: string }) => {
-      const id = params?.ticket_id || params?.ticketId || "";
-      const ticket = getTicket(id);
-      console.log("[ElevenLabs Client Tool] get_ticket_context:", id, ticket);
-      if (!ticket) {
-        return JSON.stringify({ ticket_id: id, error: "Ticket not found" });
+  const clientTools = useMemo(() => {
+    function parseParams(params: unknown): Record<string, any> {
+      if (!params) return {};
+      if (typeof params === "string") {
+        try {
+          return JSON.parse(params);
+        } catch {
+          return {};
+        }
       }
-      return JSON.stringify(ticket);
-    },
-    log_expert_decision: (params: {
-      ticket_id?: string;
-      ticketId?: string;
-      action_taken?: string;
-      actionTaken?: string;
-      decision_rationale?: string;
-      decisionRationale?: string;
-      priority?: string;
-      team?: string;
-      action?: string;
-      rationale?: string;
-    }) => {
-      const ticketId = params?.ticket_id || params?.ticketId || "";
-      const actionTaken = params?.action_taken || params?.actionTaken || params?.action || "";
-      const rationale = params?.decision_rationale || params?.decisionRationale || params?.rationale || "";
-      const priority = params?.priority || "";
-      const team = params?.team || "";
+      if (typeof params === "object") {
+        return params as Record<string, any>;
+      }
+      return {};
+    }
 
-      console.log("[ElevenLabs Client Tool] log_expert_decision invoked:", { ticketId, actionTaken, rationale, priority, team });
+    const getTicketContextHandler = (rawParams: unknown) => {
+      try {
+        const params = parseParams(rawParams);
+        const id = params.ticket_id || params.ticketId || params.id || "";
+        const ticket = getTicket(id);
+        console.log("[ElevenLabs Client Tool] get_ticket_context invoked:", id, ticket, rawParams);
+        if (!ticket) {
+          return JSON.stringify({ ticket_id: id, error: "Ticket not found" });
+        }
+        return JSON.stringify(ticket);
+      } catch (err) {
+        console.error("[ElevenLabs Client Tool] Error in get_ticket_context:", err);
+        return JSON.stringify({ error: String(err) });
+      }
+    };
 
-      // Integrate tool output into active workspace session messages
-      const displayText = `📝 Logged Expert Decision for ${ticketId}: ${actionTaken || params?.action || "Updated"}${rationale ? ` — "${rationale}"` : ""}`;
-      emitMessageRef.current({
-        id: genMsgId(),
-        sessionId: activeSessionIdRef.current ?? "local",
-        timestampMs: Date.now(),
-        role: "agent",
-        kind: "answer",
-        text: displayText,
-      });
+    const logExpertDecisionHandler = (rawParams: unknown) => {
+      try {
+        const params = parseParams(rawParams);
+        const ticketId = params.ticket_id || params.ticketId || params.id || "";
+        const actionTaken = params.action_taken || params.actionTaken || params.action || "";
+        const rationale = params.decision_rationale || params.decisionRationale || params.rationale || "";
+        const priority = params.priority || "";
+        const team = params.team || "";
 
-      return JSON.stringify({
-        status: "logged",
-        ticket_id: ticketId,
-        action_taken: actionTaken,
-        decision_rationale: rationale,
-        priority,
-        team,
-      });
-    },
-    trigger_debrief_summary: (params: { session_id?: string; sessionId?: string; tickets_processed?: number }) => {
-      const sessId = params?.session_id || params?.sessionId || activeSessionIdRef.current || "";
-      console.log("[ElevenLabs Client Tool] trigger_debrief_summary invoked:", params);
+        console.log("[ElevenLabs Client Tool] log_expert_decision invoked:", { ticketId, actionTaken, rationale, priority, team, rawParams });
 
-      emitMessageRef.current({
-        id: genMsgId(),
-        sessionId: sessId,
-        timestampMs: Date.now(),
-        role: "agent",
-        kind: "status",
-        text: `📊 Triggering end-of-session debrief synthesis...`,
-      });
+        const displayText = `📝 Logged Expert Decision for ${ticketId || "ticket"}: ${actionTaken || "Updated"}${rationale ? ` — "${rationale}"` : ""}`;
+        emitMessageRef.current({
+          id: genMsgId(),
+          sessionId: activeSessionIdRef.current ?? "local",
+          timestampMs: Date.now(),
+          role: "agent",
+          kind: "answer",
+          text: displayText,
+        });
 
-      return JSON.stringify({
-        status: "synthesis_started",
-        session_id: sessId,
-        tickets_processed: params?.tickets_processed || 0,
-      });
-    },
-  }), []);
+        return JSON.stringify({
+          status: "logged",
+          ticket_id: ticketId,
+          action_taken: actionTaken,
+          decision_rationale: rationale,
+          priority,
+          team,
+        });
+      } catch (err) {
+        console.error("[ElevenLabs Client Tool] Error in log_expert_decision:", err);
+        return JSON.stringify({ status: "error", message: String(err) });
+      }
+    };
+
+    const triggerDebriefSummaryHandler = (rawParams: unknown) => {
+      try {
+        const params = parseParams(rawParams);
+        const sessId = params.session_id || params.sessionId || activeSessionIdRef.current || "";
+        console.log("[ElevenLabs Client Tool] trigger_debrief_summary invoked:", params, rawParams);
+
+        emitMessageRef.current({
+          id: genMsgId(),
+          sessionId: sessId,
+          timestampMs: Date.now(),
+          role: "agent",
+          kind: "status",
+          text: `📊 Triggering end-of-session debrief synthesis...`,
+        });
+
+        return JSON.stringify({
+          status: "synthesis_started",
+          session_id: sessId,
+          tickets_processed: params.tickets_processed || 0,
+        });
+      } catch (err) {
+        console.error("[ElevenLabs Client Tool] Error in trigger_debrief_summary:", err);
+        return JSON.stringify({ status: "error", message: String(err) });
+      }
+    };
+
+    return {
+      log_expert_decision: logExpertDecisionHandler,
+      logExpertDecision: logExpertDecisionHandler,
+      log_decision: logExpertDecisionHandler,
+      logDecision: logExpertDecisionHandler,
+      expert_decision: logExpertDecisionHandler,
+      expertDecision: logExpertDecisionHandler,
+      get_ticket_context: getTicketContextHandler,
+      getTicketContext: getTicketContextHandler,
+      get_ticket: getTicketContextHandler,
+      getTicket: getTicketContextHandler,
+      trigger_debrief_summary: triggerDebriefSummaryHandler,
+      triggerDebriefSummary: triggerDebriefSummaryHandler,
+      debrief_summary: triggerDebriefSummaryHandler,
+      debriefSummary: triggerDebriefSummaryHandler,
+    };
+  }, []);
 
   const clientToolsRef = useRef(clientTools);
   clientToolsRef.current = clientTools;
