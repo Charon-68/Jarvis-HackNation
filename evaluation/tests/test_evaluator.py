@@ -59,7 +59,7 @@ def test_t001_full_outage_accepted():
         sessionId="session_demo",
         ticketId="T001",
         priority="Emergency",
-        team="Engineering",
+        team="Operations",
         action="Escalate Immediately",
     )
     result = evaluator.evaluate(attempt)
@@ -67,14 +67,14 @@ def test_t001_full_outage_accepted():
     assert result.intervention is None
 
 
-def test_t002_single_user_accepted():
+def test_t002_payroll_failure_accepted():
     evaluator = DecisionEvaluator()
     attempt = DecisionAttempt(
         sessionId="session_demo",
         ticketId="T002",
-        priority="Low Priority",
-        team="Customer Support",
-        action="Follow Standard Procedure",
+        priority="Emergency",
+        team="Accounting",
+        action="Investigate & Resolve",
     )
     result = evaluator.evaluate(attempt)
     assert result.allowSave is True
@@ -115,40 +115,40 @@ def test_t003_correct_decision_allowed(sample_work_map):
     assert result.intervention is None
 
 
-def test_t004_password_reset_accepted():
+def test_t004_dashboard_slowness_accepted():
     evaluator = DecisionEvaluator()
     attempt = DecisionAttempt(
         sessionId="session_demo",
         ticketId="T004",
-        priority="Low Priority",
-        team="Accounting",
+        priority="Moderate",
+        team="Engineering",
         action="Investigate & Resolve",
     )
     result = evaluator.evaluate(attempt)
     assert result.allowSave is True
 
 
-def test_t005_api_error_accepted():
+def test_t005_onboarding_access_accepted():
     evaluator = DecisionEvaluator()
     attempt = DecisionAttempt(
         sessionId="session_demo",
         ticketId="T005",
         priority="Moderate",
-        team="Operations",
-        action="Request More Information",
+        team="HR",
+        action="Follow Standard Procedure",
     )
     result = evaluator.evaluate(attempt)
     assert result.allowSave is True
 
 
-def test_t006_slow_dashboard_accepted():
+def test_t006_billing_inquiry_accepted():
     evaluator = DecisionEvaluator()
     attempt = DecisionAttempt(
         sessionId="session_demo",
         ticketId="T006",
-        priority="Moderate",
-        team="HR",
-        action="Monitor & Follow Up",
+        priority="Low Priority",
+        team="Customer Support",
+        action="Request More Information",
     )
     result = evaluator.evaluate(attempt)
     assert result.allowSave is True

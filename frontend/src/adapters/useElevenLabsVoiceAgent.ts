@@ -83,6 +83,80 @@ export function useElevenLabsVoiceAgent(
   const emitMessageRef = useRef(emitMessage);
   emitMessageRef.current = emitMessage;
 
+  const clientTools = useMemo(() => ({
+    get_ticket_context: (params: { ticket_id?: string; ticketId?: string }) => {
+      const id = params?.ticket_id || params?.ticketId || "";
+      const ticket = getTicket(id);
+      console.log("[ElevenLabs Client Tool] get_ticket_context:", id, ticket);
+      if (!ticket) {
+        return JSON.stringify({ ticket_id: id, error: "Ticket not found" });
+      }
+      return JSON.stringify(ticket);
+    },
+    log_expert_decision: (params: {
+      ticket_id?: string;
+      ticketId?: string;
+      action_taken?: string;
+      actionTaken?: string;
+      decision_rationale?: string;
+      decisionRationale?: string;
+      priority?: string;
+      team?: string;
+      action?: string;
+      rationale?: string;
+    }) => {
+      const ticketId = params?.ticket_id || params?.ticketId || "";
+      const actionTaken = params?.action_taken || params?.actionTaken || params?.action || "";
+      const rationale = params?.decision_rationale || params?.decisionRationale || params?.rationale || "";
+      const priority = params?.priority || "";
+      const team = params?.team || "";
+
+      console.log("[ElevenLabs Client Tool] log_expert_decision invoked:", { ticketId, actionTaken, rationale, priority, team });
+
+      // Integrate tool output into active workspace session messages
+      const displayText = `📝 Logged Expert Decision for ${ticketId}: ${actionTaken || params?.action || "Updated"}${rationale ? ` — "${rationale}"` : ""}`;
+      emitMessageRef.current({
+        id: genMsgId(),
+        sessionId: activeSessionIdRef.current ?? "local",
+        timestampMs: Date.now(),
+        role: "agent",
+        kind: "answer",
+        text: displayText,
+      });
+
+      return JSON.stringify({
+        status: "logged",
+        ticket_id: ticketId,
+        action_taken: actionTaken,
+        decision_rationale: rationale,
+        priority,
+        team,
+      });
+    },
+    trigger_debrief_summary: (params: { session_id?: string; sessionId?: string; tickets_processed?: number }) => {
+      const sessId = params?.session_id || params?.sessionId || activeSessionIdRef.current || "";
+      console.log("[ElevenLabs Client Tool] trigger_debrief_summary invoked:", params);
+
+      emitMessageRef.current({
+        id: genMsgId(),
+        sessionId: sessId,
+        timestampMs: Date.now(),
+        role: "agent",
+        kind: "status",
+        text: `📊 Triggering end-of-session debrief synthesis...`,
+      });
+
+      return JSON.stringify({
+        status: "synthesis_started",
+        session_id: sessId,
+        tickets_processed: params?.tickets_processed || 0,
+      });
+    },
+  }), []);
+
+  const clientToolsRef = useRef(clientTools);
+  clientToolsRef.current = clientTools;
+
   // Granular ElevenLabs conversation hooks with registered client tools
   let conversation: ReturnType<typeof useConversation> | null = null;
   let controls: ReturnType<typeof useConversationControls> | null = null;
@@ -92,76 +166,7 @@ export function useElevenLabsVoiceAgent(
   try {
     // eslint-disable-next-line react-hooks/rules-of-hooks
     conversation = useConversation({
-      clientTools: {
-        get_ticket_context: (params: { ticket_id?: string; ticketId?: string }) => {
-          const id = params?.ticket_id || params?.ticketId || "";
-          const ticket = getTicket(id);
-          console.log("[ElevenLabs Client Tool] get_ticket_context:", id, ticket);
-          if (!ticket) {
-            return JSON.stringify({ ticket_id: id, error: "Ticket not found" });
-          }
-          return JSON.stringify(ticket);
-        },
-        log_expert_decision: (params: {
-          ticket_id?: string;
-          ticketId?: string;
-          action_taken?: string;
-          actionTaken?: string;
-          decision_rationale?: string;
-          decisionRationale?: string;
-          priority?: string;
-          team?: string;
-          action?: string;
-          rationale?: string;
-        }) => {
-          const ticketId = params?.ticket_id || params?.ticketId || "";
-          const actionTaken = params?.action_taken || params?.actionTaken || params?.action || "";
-          const rationale = params?.decision_rationale || params?.decisionRationale || params?.rationale || "";
-          const priority = params?.priority || "";
-          const team = params?.team || "";
-
-          console.log("[ElevenLabs Client Tool] log_expert_decision invoked:", { ticketId, actionTaken, rationale, priority, team });
-
-          // Integrate tool output into active workspace session messages
-          const displayText = `📝 Logged Expert Decision for ${ticketId}: ${actionTaken || params?.action || "Updated"}${rationale ? ` — "${rationale}"` : ""}`;
-          emitMessageRef.current({
-            id: genMsgId(),
-            sessionId: activeSessionIdRef.current ?? "local",
-            timestampMs: Date.now(),
-            role: "agent",
-            kind: "answer",
-            text: displayText,
-          });
-
-          return JSON.stringify({
-            status: "logged",
-            ticket_id: ticketId,
-            action_taken: actionTaken,
-            decision_rationale: rationale,
-            priority,
-            team,
-          });
-        },
-        trigger_debrief_summary: (params: { session_id?: string; sessionId?: string; tickets_processed?: number }) => {
-          const sessId = params?.session_id || params?.sessionId || activeSessionIdRef.current || "";
-          console.log("[ElevenLabs Client Tool] trigger_debrief_summary invoked:", params);
-
-          emitMessageRef.current({
-            id: genMsgId(),
-            sessionId: sessId,
-            timestampMs: Date.now(),
-            role: "agent",
-            kind: "status",
-            text: `📊 Triggering end-of-session debrief synthesis...`,
-          });
-
-          return JSON.stringify({
-            status: "synthesis_started",
-            session_id: sessId,
-            tickets_processed: params?.tickets_processed || 0,
-          });
-        },
-      },
+      clientTools,
       onConnect: () => {
         emitStatusRef.current("connected");
       },
@@ -276,8 +281,8 @@ export function useElevenLabsVoiceAgent(
           (typeof import.meta !== "undefined" && import.meta.env?.VITE_ELEVENLABS_AGENT_ID) ||
           "agent_9501m425131dfx5tmyks9aq9a003";
 
-        // Must NOT silently fallback to mock if real mode requested
-        const startFn = controlsRef.current?.startSession || conversationRef.current?.startSession;
+        // Prioritize conversation instance startSession over controls and explicitly supply clientTools
+        const startFn = conversationRef.current?.startSession || controlsRef.current?.startSession;
         if (!startFn) {
           emitStatusRef.current("error");
           const errorMsg = "ElevenLabs conversation provider is unavailable. Real voice requires active ElevenLabs session.";
@@ -293,7 +298,7 @@ export function useElevenLabsVoiceAgent(
         }
 
         try {
-          await startFn({ agentId });
+          await startFn({ agentId, clientTools: clientToolsRef.current });
         } catch (sessionErr: unknown) {
           const errObj = sessionErr as Error;
           const errMsg = errObj?.message || String(sessionErr);
