@@ -1,0 +1,20 @@
+[
+  {
+    "id": "TICKET-001",
+    "title": "Login page crashes on Safari",
+    "description": "Users on Safari 17+ report the login page crashes on submit.",
+    "priority": "high",
+    "status": "open",
+    "createdAt": "2026-10-01T08:00:00Z",
+    "updatedAt": "2026-10-01T08:00:00Z"
+  },
+  {
+    "id": "TICKET-002",
+    "title": "Slow dashboard load times",
+    "description": "Dashboard takes >10s to load for accounts with >1000 records.",
+    "priority": "medium",
+    "status": "open",
+    "createdAt": "2026-10-02T09:30:00Z",
+    "updatedAt": "2026-10-02T09:30:00Z"
+  }
+]

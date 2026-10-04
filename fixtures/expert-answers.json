@@ -1,0 +1,4 @@
+[
+  {"id":"ans_001","sessionId":"session_demo","timestampMs":20000,"question":"Why did you mark T001 as P1?","answer":"The whole production site is down, so it is P1.","phase":"capture","relatedEventId":"evt_002"},
+  {"id":"ans_002","sessionId":"session_demo","timestampMs":52000,"question":"Why did you stop normal troubleshooting on T003?","answer":"Possible data loss means we stop and escalate.","phase":"capture","relatedEventId":"evt_003"}
+]

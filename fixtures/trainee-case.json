@@ -1,0 +1,1 @@
+{"id":"T_NEW_01","scenario":"12 customers lost transaction history after an update.","expected":{"priority":"P1","team":"Engineering","action":"STOP + escalate"},"canonicalMistake":{"priority":"P3","team":"Support","action":"Normal troubleshooting"}}

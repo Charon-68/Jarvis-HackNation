@@ -1,0 +1,5 @@
+[
+  {"id":"evt_001","sessionId":"session_demo","timestampMs":8000,"ticketId":"T001","type":"ticket_opened","description":"T001 opened","source":"workflow_state"},
+  {"id":"evt_002","sessionId":"session_demo","timestampMs":18000,"ticketId":"T001","type":"priority_changed","description":"Priority changed to P1","newValue":"P1","source":"workflow_state"},
+  {"id":"evt_003","sessionId":"session_demo","timestampMs":50000,"ticketId":"T003","type":"action_changed","description":"Action changed to STOP + escalate","newValue":"STOP + escalate","source":"hybrid","screenshotRef":"frame_050"}
+]
