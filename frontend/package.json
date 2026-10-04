@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "test": "npx tsx src/tests/integration.test.ts",
+    "test": "npx tsx src/tests/runAllTests.ts",
     "preview": "vite preview"
   },
   "dependencies": {

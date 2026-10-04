@@ -1,7 +1,7 @@
 /**
  * P1-02, P1-04, P1-10 — Expert Capture Workspace
  * Three-panel layout: Ticket Queue | Active Ticket | AI Apprentice
- * with session controls bottom bar.
+ * with session controls bottom bar and real ElevenLabs voice integration.
  */
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useSession } from "../store/sessionStore";
@@ -19,13 +19,15 @@ import type {
   CaptureStatus,
   CaptureState,
 } from "../types/index";
-import { mockVoiceAgent } from "../mocks/mockServices";
+import { useElevenLabsVoiceAgent } from "../adapters/useElevenLabsVoiceAgent";
 import { DefaultScreenCaptureController } from "../capture/ScreenCaptureController";
 import { MockVisionAdapter } from "../adapters/visionAdapter";
 import { FramePipeline } from "../capture/framePipeline";
 
 let _eventSeq = 1;
-function genEventId() { return `evt_ui_${Date.now()}_${_eventSeq++}`; }
+function genEventId() {
+  return `evt_ui_${Date.now()}_${_eventSeq++}`;
+}
 
 export default function CaptureWorkspace() {
   const { state, endCapture, dispatchAgentMessage, dispatchScreenEvent, dispatchEvaluationResult } = useSession();
@@ -36,7 +38,9 @@ export default function CaptureWorkspace() {
   const [elapsed, setElapsed] = useState(0);
   const [agentStatus, setAgentStatus] = useState("offline");
   const [isSaving, setIsSaving] = useState(false);
-  const [voiceConnected, setVoiceConnected] = useState(false);
+
+  // Real ElevenLabs Voice Agent hook bridge
+  const voiceAgent = useElevenLabsVoiceAgent();
 
   const captureControllerRef = useRef<DefaultScreenCaptureController | null>(null);
   const pipelineRef = useRef<FramePipeline | null>(null);
@@ -45,6 +49,38 @@ export default function CaptureWorkspace() {
   const tickets = listTickets();
   const activeTicket: Ticket | null = tickets.find((t) => t.id === activeTicketId) ?? null;
   const captureStatus = captureState.status;
+
+  // Real ElevenLabs Voice Connection lifecycle & Effect Cleanup
+  useEffect(() => {
+    if (!state.session?.id) return;
+    let isCancelled = false;
+
+    const unsubMsg = voiceAgent.onMessage((msg) => {
+      if (!isCancelled) dispatchAgentMessage(msg);
+    });
+
+    const unsubStatus = voiceAgent.onStatusChange((s) => {
+      if (!isCancelled) setAgentStatus(s);
+    });
+
+    // Connect voice session
+    voiceAgent
+      .connect({ sessionId: state.session.id, mode: "interviewer" })
+      .catch((err: unknown) => {
+        if (!isCancelled) {
+          setAgentStatus("error");
+          console.warn("Voice agent connection note:", (err as Error).message);
+        }
+      });
+
+    // Clean synchronous useEffect return
+    return () => {
+      isCancelled = true;
+      unsubMsg();
+      unsubStatus();
+      voiceAgent.disconnect().catch(console.error);
+    };
+  }, [state.session?.id, voiceAgent, dispatchAgentMessage]);
 
   // Initialize capture controller and frame pipeline
   useEffect(() => {
@@ -55,6 +91,7 @@ export default function CaptureWorkspace() {
       setCaptureState(st);
     });
 
+    // Explicit mock vision fallback for development (backend /api/vision/analyze-frame route is un-mounted)
     const visionAdapter = new MockVisionAdapter();
     const pipeline = new FramePipeline({
       sessionId: state.session?.id ?? "local",
@@ -62,7 +99,7 @@ export default function CaptureWorkspace() {
       visionAdapter,
       onScreenEvent: (evt) => {
         dispatchScreenEvent(evt);
-        mockVoiceAgent.sendScreenEvent(evt).catch(console.error);
+        voiceAgent.sendScreenEvent(evt).catch(console.error);
       },
     });
     pipelineRef.current = pipeline;
@@ -72,30 +109,21 @@ export default function CaptureWorkspace() {
       controller.stop();
       unsubStatus();
     };
-  }, [state.session?.id, dispatchScreenEvent]);
+  }, [state.session?.id, voiceAgent, dispatchScreenEvent]);
 
-  // Connect voice agent when session starts
-  useEffect(() => {
-    if (!state.session || voiceConnected) return;
-    (async () => {
-      const unsub1 = mockVoiceAgent.onMessage((msg) => dispatchAgentMessage(msg));
-      const unsub2 = mockVoiceAgent.onStatusChange((s) => {
-        setAgentStatus(s);
-      });
-      await mockVoiceAgent.connect({ sessionId: state.session!.id, mode: "interviewer" });
-      setVoiceConnected(true);
-      return () => { unsub1(); unsub2(); };
-    })();
-  }, [state.session, voiceConnected, dispatchAgentMessage]);
-
-  // Timer
+  // Session elapsed timer
   useEffect(() => {
     if (captureStatus === "active") {
       timerRef.current = setInterval(() => setElapsed((e) => e + 1), 1000);
     } else {
-      if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
     }
-    return () => { if (timerRef.current) clearInterval(timerRef.current); };
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
   }, [captureStatus]);
 
   const handleStart = useCallback(async () => {
@@ -129,76 +157,102 @@ export default function CaptureWorkspace() {
     await endCapture();
   }, [endCapture, handleStop]);
 
-  const handleTicketSelect = useCallback((id: string) => {
-    if (captureStatus === "paused") return;
-    const prev = activeTicketId;
+  const handleTicketSelect = useCallback(
+    (id: string) => {
+      if (captureStatus === "paused") return;
 
-    setActiveTicketId(id);
-    dispatchEvaluationResult(null);
+      setActiveTicketId(id);
+      dispatchEvaluationResult(null);
 
-    // Emit ticket_opened screen event
-    const ticket = tickets.find((t) => t.id === id);
-    if (ticket && captureStatus === "active") {
-      const event: ScreenEvent = {
-        id: genEventId(),
-        sessionId: state.session?.id ?? "local",
-        timestampMs: Date.now(),
-        ticketId: id,
-        type: "ticket_opened",
-        description: `Opened ${id}: ${ticket.issue}`,
-        source: "workflow_state",
-      };
-      dispatchScreenEvent(event);
-      mockVoiceAgent.sendScreenEvent(event).catch(console.error);
-    }
-    void prev;
-  }, [activeTicketId, captureStatus, tickets, state.session, dispatchScreenEvent, dispatchEvaluationResult]);
+      // Emit ticket_opened screen event
+      const ticket = tickets.find((t) => t.id === id);
+      if (ticket && captureStatus === "active") {
+        const event: ScreenEvent = {
+          id: genEventId(),
+          sessionId: state.session?.id ?? "local",
+          timestampMs: Date.now(),
+          ticketId: id,
+          type: "ticket_opened",
+          description: `Opened ${id}: ${ticket.issue}`,
+          source: "workflow_state",
+        };
+        dispatchScreenEvent(event);
+        voiceAgent.sendScreenEvent(event).catch(console.error);
+      }
+    },
+    [captureStatus, tickets, state.session, voiceAgent, dispatchScreenEvent, dispatchEvaluationResult],
+  );
 
-  const handleSave = useCallback(async (decision: { priority: TicketPriority; team: TicketTeam; action: TicketAction }) => {
-    if (!activeTicket || !state.session) return;
-    setIsSaving(true);
-    dispatchEvaluationResult(null);
+  const handleSave = useCallback(
+    async (decision: { priority: TicketPriority; team: TicketTeam; action: TicketAction }) => {
+      if (!activeTicket || !state.session) return;
+      setIsSaving(true);
+      dispatchEvaluationResult(null);
 
-    try {
-      // Emit field change events
-      const baseEvent: Omit<ScreenEvent, "id" | "type" | "description" | "newValue"> = {
-        sessionId: state.session.id,
-        timestampMs: Date.now(),
-        ticketId: activeTicket.id,
-        source: "workflow_state",
-      };
+      try {
+        const baseEvent: Omit<ScreenEvent, "id" | "type" | "description" | "newValue"> = {
+          sessionId: state.session.id,
+          timestampMs: Date.now(),
+          ticketId: activeTicket.id,
+          source: "workflow_state",
+        };
 
-      const events: ScreenEvent[] = [
-        { ...baseEvent, id: genEventId(), type: "priority_changed", description: `Priority set to ${decision.priority}`, newValue: decision.priority },
-        { ...baseEvent, id: genEventId(), type: "team_changed", description: `Team set to ${decision.team}`, newValue: decision.team },
-        { ...baseEvent, id: genEventId(), type: "action_changed", description: `Action set to ${decision.action}`, newValue: decision.action },
-        { ...baseEvent, id: genEventId(), type: "decision_saved", description: `Decision saved for ${activeTicket.id}` },
-      ];
+        const events: ScreenEvent[] = [
+          {
+            ...baseEvent,
+            id: genEventId(),
+            type: "priority_changed",
+            description: `Priority set to ${decision.priority}`,
+            newValue: decision.priority,
+          },
+          {
+            ...baseEvent,
+            id: genEventId(),
+            type: "team_changed",
+            description: `Team set to ${decision.team}`,
+            newValue: decision.team,
+          },
+          {
+            ...baseEvent,
+            id: genEventId(),
+            type: "action_changed",
+            description: `Action set to ${decision.action}`,
+            newValue: decision.action,
+          },
+          {
+            ...baseEvent,
+            id: genEventId(),
+            type: "decision_saved",
+            description: `Decision saved for ${activeTicket.id}`,
+          },
+        ];
 
-      for (const e of events) {
-        dispatchScreenEvent(e);
-        if (captureStatus === "active") {
-          await mockVoiceAgent.sendScreenEvent(e).catch(console.error);
+        for (const e of events) {
+          dispatchScreenEvent(e);
+          if (captureStatus === "active") {
+            await voiceAgent.sendScreenEvent(e).catch(console.error);
+          }
         }
-      }
 
-      // In expert mode, just save without evaluation
-      setSolvedTicketIds((prev) => [...prev.filter((x) => x !== activeTicket.id), activeTicket.id]);
-      dispatchEvaluationResult({ allowSave: true, intervention: null });
+        // In expert mode, save without evaluation gate
+        setSolvedTicketIds((prev) => [...prev.filter((x) => x !== activeTicket.id), activeTicket.id]);
+        dispatchEvaluationResult({ allowSave: true, intervention: null });
 
-      // Auto-advance to next ticket in sequence
-      const currentIdx = EXPERT_SEQUENCE.indexOf(activeTicket.id);
-      if (currentIdx >= 0 && currentIdx < EXPERT_SEQUENCE.length - 1) {
-        setTimeout(() => {
-          const nextId = EXPERT_SEQUENCE[currentIdx + 1];
-          setActiveTicketId(nextId);
-          dispatchEvaluationResult(null);
-        }, 800);
+        // Auto-advance to next ticket in sequence
+        const currentIdx = EXPERT_SEQUENCE.indexOf(activeTicket.id);
+        if (currentIdx >= 0 && currentIdx < EXPERT_SEQUENCE.length - 1) {
+          setTimeout(() => {
+            const nextId = EXPERT_SEQUENCE[currentIdx + 1];
+            setActiveTicketId(nextId);
+            dispatchEvaluationResult(null);
+          }, 800);
+        }
+      } finally {
+        setIsSaving(false);
       }
-    } finally {
-      setIsSaving(false);
-    }
-  }, [activeTicket, state.session, captureStatus, dispatchScreenEvent, dispatchEvaluationResult]);
+    },
+    [activeTicket, state.session, captureStatus, voiceAgent, dispatchScreenEvent, dispatchEvaluationResult],
+  );
 
   const isCapturingPaused = captureStatus === "paused";
   const canSelect = captureStatus === "active" || captureStatus === "idle";
