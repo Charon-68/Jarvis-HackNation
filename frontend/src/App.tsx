@@ -1,9 +1,10 @@
 import { useRef, useState } from "react";
 import { useConversation } from "@elevenlabs/react";
 import events from "../screen_events.json";
+import { Timeline } from "./Timeline";
 
-// This is your teammate's EXISTING PUBLIC ElevenLabs agent.
-const AGENT_ID = "agent_9501m425131dfx5tmyks9aq9a003";
+// Load Agent ID from environment variables instead of hardcoding
+const AGENT_ID = import.meta.env.VITE_ELEVENLABS_APPRENTICE_AGENT_ID || "";
 
 const tickets: Record<string, object> = {
   T001: { ticket_id: "T001", customer: "ABC Corp", issue: "Production website completely down", scope: "All customers", priority: "P1", team: "Infrastructure", action: "Immediate escalation" },
@@ -171,6 +172,8 @@ function Apprentice() {
           </pre>
         </aside>
       </div>
+
+      <Timeline onSeek={seekAndSync} />
     </main>
   );
 }
