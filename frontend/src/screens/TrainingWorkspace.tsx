@@ -5,10 +5,14 @@
  * Tutor Intervention renders severity, message, reason, expert guardrail, and evidence replay.
  */
 
-import { useState } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useSession } from "../store/sessionStore";
 import { TRAINING_CASE } from "../data/ticketRepository";
-import { mockApi, mockVoiceAgent } from "../mocks/mockServices";
+import { mockApi } from "../mocks/mockServices";
+import { useElevenLabsVoiceAgent } from "../adapters/useElevenLabsVoiceAgent";
+import { DefaultScreenCaptureController } from "../capture/ScreenCaptureController";
+import { MockVisionAdapter } from "../adapters/visionAdapter";
+import { FramePipeline } from "../capture/framePipeline";
 import type {
   TicketPriority,
   TicketTeam,
@@ -17,6 +21,7 @@ import type {
   TutorIntervention,
   TrainingResult,
   WorkMapStep,
+  CaptureState,
 } from "../types/index";
 import ApprenticePanel from "../components/ApprenticePanel";
 import EvidenceReplayModal from "../components/EvidenceReplayModal";
@@ -61,9 +66,93 @@ export default function TrainingWorkspace() {
 
   // Track initial attempt for results evaluation
   const [firstAttempt, setFirstAttempt] = useState<{ priority: string; team: string; action: string } | null>(null);
+  const [captureState, setCaptureState] = useState<CaptureState>({ status: "idle" });
+  const [agentStatus, setAgentStatus] = useState("offline");
+
+  const voiceAgent = useElevenLabsVoiceAgent();
+  const captureControllerRef = useRef<DefaultScreenCaptureController | null>(null);
+  const pipelineRef = useRef<FramePipeline | null>(null);
+
+  useEffect(() => {
+    if (!state.session?.id) return;
+    let isCancelled = false;
+
+    const unsubMsg = voiceAgent.onMessage((msg) => {
+      if (!isCancelled) dispatchAgentMessage(msg);
+    });
+
+    const unsubStatus = voiceAgent.onStatusChange((s) => {
+      if (!isCancelled) setAgentStatus(s);
+    });
+
+    voiceAgent
+      .connect({ sessionId: state.session.id, mode: "tutor" })
+      .catch((err: unknown) => {
+        if (!isCancelled) {
+          setAgentStatus("error");
+          console.warn("Voice agent connection note:", (err as Error).message);
+        }
+      });
+
+    return () => {
+      isCancelled = true;
+      unsubMsg();
+      unsubStatus();
+      voiceAgent.disconnect().catch(console.error);
+    };
+  }, [state.session?.id, voiceAgent, dispatchAgentMessage]);
+
+  useEffect(() => {
+    const controller = new DefaultScreenCaptureController({ sampleIntervalMs: 3000 });
+    captureControllerRef.current = controller;
+
+    const unsubStatus = controller.onStatusChange((st) => {
+      setCaptureState(st);
+    });
+
+    const visionAdapter = new MockVisionAdapter();
+    const pipeline = new FramePipeline({
+      sessionId: state.session?.id ?? "local",
+      captureController: controller,
+      visionAdapter,
+      onScreenEvent: (evt) => {
+        // dispatchScreenEvent(evt);
+        voiceAgent.sendScreenEvent(evt).catch(console.error);
+      },
+    });
+    pipelineRef.current = pipeline;
+    
+    // Auto start capture in training
+    controller.start().catch(console.error);
+    pipeline.start().catch(console.error);
+
+    return () => {
+      pipeline.stop();
+      controller.stop();
+      unsubStatus();
+    };
+  }, [state.session?.id, voiceAgent]);
 
   const tc = TRAINING_CASE;
   const workMap = state.workMap;
+
+  useEffect(() => {
+    if (agentStatus === "connected" && state.session?.id && workMap) {
+      voiceAgent.sendWorkMap(workMap).catch(console.error);
+
+      // Emit initial screen event so tutor knows we opened the training case
+      const evt: import("../types/index").ScreenEvent = {
+        id: uid("evt"),
+        sessionId: state.session.id,
+        timestampMs: Date.now(),
+        ticketId: tc.id,
+        type: "ticket_opened",
+        description: `Opened ${tc.id}: ${tc.issue}`,
+        source: "workflow_state",
+      };
+      voiceAgent.sendScreenEvent(evt).catch(console.error);
+    }
+  }, [agentStatus, state.session?.id, workMap, voiceAgent, tc.id, tc.issue]);
 
   // Task P1-15 — Pre-Save Evaluation Gate
   const handleSave = async () => {
@@ -119,7 +208,7 @@ export default function TrainingWorkspace() {
         // Block save and present Tutor Intervention
         setIntervention(evalResult.intervention);
 
-        await mockVoiceAgent.sendIntervention(evalResult.intervention).catch(console.error);
+        await voiceAgent.sendIntervention(evalResult.intervention).catch(console.error);
 
         dispatchAgentMessage({
           id: uid("msg"),
@@ -463,9 +552,9 @@ export default function TrainingWorkspace() {
         }}
       >
         <ApprenticePanel
-          agentStatus="connected"
+          agentStatus={agentStatus}
           messages={state.agentMessages}
-          screenEvents={[]}
+          screenEvents={state.screenEvents}
         />
       </div>
 
