@@ -146,6 +146,18 @@ export default function TrainingWorkspace() {
     if (agentStatus === "connected" && state.session?.id && workMap) {
       voiceAgent.sendWorkMap(workMap).catch(console.error);
 
+      // Synchronize training case context
+      voiceAgent
+        .updateContext({
+          id: tc.id,
+          issue: tc.issue,
+          scope: tc.scope,
+          priority,
+          team,
+          action,
+        })
+        .catch(console.error);
+
       // Emit initial screen event so tutor knows we opened the training case
       const evt: import("../types/index").ScreenEvent = {
         id: uid("evt"),
@@ -158,7 +170,7 @@ export default function TrainingWorkspace() {
       };
       voiceAgent.sendScreenEvent(evt).catch(console.error);
     }
-  }, [agentStatus, state.session?.id, workMap, voiceAgent, tc.id, tc.issue]);
+  }, [agentStatus, state.session?.id, workMap, voiceAgent, tc.id, tc.issue, tc.scope, priority, team, action]);
 
   // Task P1-15 — Pre-Save Evaluation Gate
   const handleSave = async () => {

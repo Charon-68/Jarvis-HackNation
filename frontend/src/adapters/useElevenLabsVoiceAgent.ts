@@ -22,6 +22,8 @@ import type {
   TutorIntervention,
 } from "../types/index";
 
+import { getTicket } from "../data/ticketRepository";
+
 let _msgId = 1;
 function genMsgId(): string {
   return `msg_el_${Date.now()}_${_msgId++}`;
@@ -81,7 +83,7 @@ export function useElevenLabsVoiceAgent(
   const emitMessageRef = useRef(emitMessage);
   emitMessageRef.current = emitMessage;
 
-  // Granular ElevenLabs conversation hooks
+  // Granular ElevenLabs conversation hooks with registered client tools
   let conversation: ReturnType<typeof useConversation> | null = null;
   let controls: ReturnType<typeof useConversationControls> | null = null;
   let statusState: ReturnType<typeof useConversationStatus> | null = null;
@@ -90,6 +92,76 @@ export function useElevenLabsVoiceAgent(
   try {
     // eslint-disable-next-line react-hooks/rules-of-hooks
     conversation = useConversation({
+      clientTools: {
+        get_ticket_context: (params: { ticket_id?: string; ticketId?: string }) => {
+          const id = params?.ticket_id || params?.ticketId || "";
+          const ticket = getTicket(id);
+          console.log("[ElevenLabs Client Tool] get_ticket_context:", id, ticket);
+          if (!ticket) {
+            return JSON.stringify({ ticket_id: id, error: "Ticket not found" });
+          }
+          return JSON.stringify(ticket);
+        },
+        log_expert_decision: (params: {
+          ticket_id?: string;
+          ticketId?: string;
+          action_taken?: string;
+          actionTaken?: string;
+          decision_rationale?: string;
+          decisionRationale?: string;
+          priority?: string;
+          team?: string;
+          action?: string;
+          rationale?: string;
+        }) => {
+          const ticketId = params?.ticket_id || params?.ticketId || "";
+          const actionTaken = params?.action_taken || params?.actionTaken || params?.action || "";
+          const rationale = params?.decision_rationale || params?.decisionRationale || params?.rationale || "";
+          const priority = params?.priority || "";
+          const team = params?.team || "";
+
+          console.log("[ElevenLabs Client Tool] log_expert_decision invoked:", { ticketId, actionTaken, rationale, priority, team });
+
+          // Integrate tool output into active workspace session messages
+          const displayText = `📝 Logged Expert Decision for ${ticketId}: ${actionTaken || params?.action || "Updated"}${rationale ? ` — "${rationale}"` : ""}`;
+          emitMessageRef.current({
+            id: genMsgId(),
+            sessionId: activeSessionIdRef.current ?? "local",
+            timestampMs: Date.now(),
+            role: "agent",
+            kind: "answer",
+            text: displayText,
+          });
+
+          return JSON.stringify({
+            status: "logged",
+            ticket_id: ticketId,
+            action_taken: actionTaken,
+            decision_rationale: rationale,
+            priority,
+            team,
+          });
+        },
+        trigger_debrief_summary: (params: { session_id?: string; sessionId?: string; tickets_processed?: number }) => {
+          const sessId = params?.session_id || params?.sessionId || activeSessionIdRef.current || "";
+          console.log("[ElevenLabs Client Tool] trigger_debrief_summary invoked:", params);
+
+          emitMessageRef.current({
+            id: genMsgId(),
+            sessionId: sessId,
+            timestampMs: Date.now(),
+            role: "agent",
+            kind: "status",
+            text: `📊 Triggering end-of-session debrief synthesis...`,
+          });
+
+          return JSON.stringify({
+            status: "synthesis_started",
+            session_id: sessId,
+            tickets_processed: params?.tickets_processed || 0,
+          });
+        },
+      },
       onConnect: () => {
         emitStatusRef.current("connected");
       },
@@ -252,7 +324,18 @@ export function useElevenLabsVoiceAgent(
       },
 
       updateContext: async (context: Record<string, unknown>): Promise<void> => {
-        const text = `[CONTEXT] ${JSON.stringify(context)}`;
+        let text = `[CONTEXT] ${JSON.stringify(context)}`;
+        if (context.id || context.activeTicketId || context.ticket) {
+          const t = ((context.ticket as Record<string, unknown>) || context) as Record<string, unknown>;
+          text =
+            `[CONTEXT] Active Ticket ${t.id || t.activeTicketId || ""} — ` +
+            `Customer: ${t.customer || "Unknown"}, ` +
+            `Issue: "${t.issue || ""}", ` +
+            `Scope: "${t.scope || ""}", ` +
+            `Priority: ${t.priority || "Unset"}, ` +
+            `Team: ${t.team || "Unset"}, ` +
+            `Action: ${t.action || "Unset"}`;
+        }
         const updateFn = controlsRef.current?.sendContextualUpdate || conversationRef.current?.sendContextualUpdate;
         if (updateFn) {
           updateFn(text);

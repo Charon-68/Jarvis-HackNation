@@ -187,6 +187,49 @@ export default function CaptureWorkspace() {
     [captureStatus, tickets, state.session, voiceAgent, dispatchScreenEvent, dispatchEvaluationResult],
   );
 
+  // Synchronize active ticket context (ticket/priority/team/action) with ElevenLabs
+  useEffect(() => {
+    if (activeTicket && agentStatus === "connected") {
+      voiceAgent
+        .updateContext({
+          id: activeTicket.id,
+          customer: activeTicket.customer,
+          issue: activeTicket.issue,
+          scope: activeTicket.scope,
+          priority: activeTicket.priority,
+          team: activeTicket.team,
+          action: activeTicket.action,
+          expertReasoning: activeTicket.expertReasoning,
+        })
+        .catch(console.error);
+    }
+  }, [activeTicketId, activeTicket, agentStatus, voiceAgent]);
+
+  const handleFieldChange = useCallback(
+    (field: "priority" | "team" | "action", value: string) => {
+      if (!activeTicket || captureStatus !== "active") return;
+      const event: ScreenEvent = {
+        id: genEventId(),
+        sessionId: state.session?.id ?? "local",
+        timestampMs: Date.now(),
+        ticketId: activeTicket.id,
+        type: field === "priority" ? "priority_changed" : field === "team" ? "team_changed" : "action_changed",
+        description: `${field.charAt(0).toUpperCase() + field.slice(1)} set to ${value}`,
+        newValue: value,
+        source: "workflow_state",
+      };
+      dispatchScreenEvent(event);
+      voiceAgent.sendScreenEvent(event).catch(console.error);
+      voiceAgent
+        .updateContext({
+          ...activeTicket,
+          [field]: value,
+        })
+        .catch(console.error);
+    },
+    [activeTicket, captureStatus, state.session, dispatchScreenEvent, voiceAgent],
+  );
+
   const handleSave = useCallback(
     async (decision: { priority: TicketPriority; team: TicketTeam; action: TicketAction }) => {
       if (!activeTicket || !state.session) return;
@@ -363,6 +406,7 @@ export default function CaptureWorkspace() {
             disabled={captureStatus !== "active"}
             mode="expert"
             isSaving={isSaving}
+            onFieldChange={handleFieldChange}
           />
         </div>
 

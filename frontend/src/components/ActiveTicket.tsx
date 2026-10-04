@@ -19,6 +19,7 @@ interface ActiveTicketProps {
   disabled?: boolean;
   mode?: "expert" | "training";
   isSaving?: boolean;
+  onFieldChange?: (field: "priority" | "team" | "action", value: string) => void;
 }
 
 const PRIORITIES: TicketPriority[] = ["Emergency", "Moderate", "Low Priority"];
@@ -63,6 +64,7 @@ export default function ActiveTicket({
   disabled,
   mode = "expert",
   isSaving,
+  onFieldChange,
 }: ActiveTicketProps) {
   const [priority, setPriority] = useState<TicketPriority>("Low Priority");
   const [team, setTeam] = useState<TicketTeam>("Customer Support");
@@ -174,7 +176,12 @@ export default function ActiveTicket({
               id="priority-select"
               className="select-field"
               value={priority}
-              onChange={(e) => { setPriority(e.target.value as TicketPriority); onClearEvaluation(); }}
+              onChange={(e) => {
+                const val = e.target.value as TicketPriority;
+                setPriority(val);
+                onClearEvaluation();
+                if (onFieldChange) onFieldChange("priority", val);
+              }}
               disabled={disabled}
             >
               {PRIORITIES.map((p) => <option key={p} value={p}>{p}</option>)}
@@ -187,7 +194,12 @@ export default function ActiveTicket({
               id="team-select"
               className="select-field"
               value={team}
-              onChange={(e) => { setTeam(e.target.value as TicketTeam); onClearEvaluation(); }}
+              onChange={(e) => {
+                const val = e.target.value as TicketTeam;
+                setTeam(val);
+                onClearEvaluation();
+                if (onFieldChange) onFieldChange("team", val);
+              }}
               disabled={disabled}
             >
               {TEAMS.map((t) => <option key={t} value={t}>{t}</option>)}
@@ -200,7 +212,12 @@ export default function ActiveTicket({
               id="action-select"
               className="select-field"
               value={action}
-              onChange={(e) => { setAction(e.target.value as TicketAction); onClearEvaluation(); }}
+              onChange={(e) => {
+                const val = e.target.value as TicketAction;
+                setAction(val);
+                onClearEvaluation();
+                if (onFieldChange) onFieldChange("action", val);
+              }}
               disabled={disabled}
             >
               {ACTIONS.map((a) => <option key={a} value={a}>{a}</option>)}
