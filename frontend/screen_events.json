@@ -1,0 +1,314 @@
+{
+  "session_id": "expert_session_001",
+  "workflow": "Customer Support Ticket Triage",
+  "source_video": "AI_Apprentice_Support_Triage_Demo(1).mp4",
+  "duration_seconds": 105,
+  "events": [
+    {
+      "event_id": "evt_001",
+      "timestamp": 8,
+      "event_type": "ticket_opened",
+      "ticket_id": "T001",
+      "screen": {
+        "application": "Support Triage",
+        "active_ticket": "T001"
+      },
+      "context": {
+        "customer": "ABC Corp",
+        "issue": "Production website completely down",
+        "scope": "All customers"
+      },
+      "action": {
+        "type": "open_ticket",
+        "value": "T001"
+      },
+      "importance": "medium",
+      "question_candidate": false
+    },
+    {
+      "event_id": "evt_002",
+      "timestamp": 18,
+      "event_type": "decision",
+      "ticket_id": "T001",
+      "screen": {
+        "application": "Support Triage",
+        "active_ticket": "T001"
+      },
+      "context": {
+        "customer": "ABC Corp",
+        "issue": "Production website completely down",
+        "scope": "All customers"
+      },
+      "action": {
+        "type": "set_priority",
+        "value": "P1"
+      },
+      "decision": {
+        "field": "priority",
+        "value": "P1"
+      },
+      "importance": "high",
+      "question_candidate": true,
+      "question_reason": "High-impact priority decision based on customer scope."
+    },
+    {
+      "event_id": "evt_003",
+      "timestamp": 18,
+      "event_type": "decision",
+      "ticket_id": "T001",
+      "screen": {
+        "application": "Support Triage",
+        "active_ticket": "T001"
+      },
+      "action": {
+        "type": "set_team",
+        "value": "Infrastructure"
+      },
+      "decision": {
+        "field": "team",
+        "value": "Infrastructure"
+      },
+      "importance": "high",
+      "question_candidate": true,
+      "question_reason": "Expert selected the escalation team for a production outage."
+    },
+    {
+      "event_id": "evt_004",
+      "timestamp": 18,
+      "event_type": "escalation",
+      "ticket_id": "T001",
+      "screen": {
+        "application": "Support Triage",
+        "active_ticket": "T001"
+      },
+      "action": {
+        "type": "set_action",
+        "value": "Immediate escalation"
+      },
+      "importance": "high",
+      "question_candidate": true,
+      "question_reason": "Immediate escalation is a meaningful workflow decision."
+    },
+    {
+      "event_id": "evt_005",
+      "timestamp": 33,
+      "event_type": "ticket_opened",
+      "ticket_id": "T002",
+      "screen": {
+        "application": "Support Triage",
+        "active_ticket": "T002"
+      },
+      "context": {
+        "customer": "XYZ Ltd",
+        "issue": "One employee cannot log in",
+        "scope": "Single user"
+      },
+      "action": {
+        "type": "open_ticket",
+        "value": "T002"
+      },
+      "importance": "medium",
+      "question_candidate": false
+    },
+    {
+      "event_id": "evt_006",
+      "timestamp": 33,
+      "event_type": "decision",
+      "ticket_id": "T002",
+      "screen": {
+        "application": "Support Triage",
+        "active_ticket": "T002"
+      },
+      "context": {
+        "scope": "Single user"
+      },
+      "action": {
+        "type": "set_priority",
+        "value": "P3"
+      },
+      "decision": {
+        "field": "priority",
+        "value": "P3"
+      },
+      "importance": "high",
+      "question_candidate": true,
+      "question_reason": "This is an important contrast case: isolated issue versus systemic issue."
+    },
+    {
+      "event_id": "evt_007",
+      "timestamp": 50,
+      "event_type": "ticket_opened",
+      "ticket_id": "T003",
+      "screen": {
+        "application": "Support Triage",
+        "active_ticket": "T003"
+      },
+      "context": {
+        "customer": "PQR Inc",
+        "issue": "Customer data disappeared after today's update",
+        "scope": "Potential data loss"
+      },
+      "action": {
+        "type": "open_ticket",
+        "value": "T003"
+      },
+      "importance": "high",
+      "question_candidate": true,
+      "question_reason": "Potential data loss activates a safety guardrail."
+    },
+    {
+      "event_id": "evt_008",
+      "timestamp": 50,
+      "event_type": "guardrail_decision",
+      "ticket_id": "T003",
+      "screen": {
+        "application": "Support Triage",
+        "active_ticket": "T003"
+      },
+      "context": {
+        "scope": "Potential data loss"
+      },
+      "action": {
+        "type": "set_priority",
+        "value": "P1"
+      },
+      "decision": {
+        "field": "priority",
+        "value": "P1"
+      },
+      "importance": "critical",
+      "question_candidate": true,
+      "question_reason": "The expert stops normal processing and escalates because data may be missing."
+    },
+    {
+      "event_id": "evt_009",
+      "timestamp": 50,
+      "event_type": "guardrail_decision",
+      "ticket_id": "T003",
+      "screen": {
+        "application": "Support Triage",
+        "active_ticket": "T003"
+      },
+      "action": {
+        "type": "set_action",
+        "value": "STOP + escalate"
+      },
+      "importance": "critical",
+      "question_candidate": true,
+      "question_reason": "Safety guardrail: do not ask the customer to modify or retry data."
+    },
+    {
+      "event_id": "evt_010",
+      "timestamp": 70,
+      "event_type": "ticket_opened",
+      "ticket_id": "T004",
+      "screen": {
+        "application": "Support Triage",
+        "active_ticket": "T004"
+      },
+      "context": {
+        "customer": "DEF Ltd",
+        "issue": "Password reset request",
+        "scope": "Single user"
+      },
+      "action": {
+        "type": "open_ticket",
+        "value": "T004"
+      },
+      "importance": "low",
+      "question_candidate": false
+    },
+    {
+      "event_id": "evt_011",
+      "timestamp": 80,
+      "event_type": "ticket_opened",
+      "ticket_id": "T005",
+      "screen": {
+        "application": "Support Triage",
+        "active_ticket": "T005"
+      },
+      "context": {
+        "customer": "LMN Corp",
+        "issue": "API returning errors for many customers",
+        "scope": "Multiple customers"
+      },
+      "action": {
+        "type": "open_ticket",
+        "value": "T005"
+      },
+      "importance": "high",
+      "question_candidate": true,
+      "question_reason": "Multi-customer API failure indicates a systemic incident."
+    },
+    {
+      "event_id": "evt_012",
+      "timestamp": 80,
+      "event_type": "decision",
+      "ticket_id": "T005",
+      "screen": {
+        "application": "Support Triage",
+        "active_ticket": "T005"
+      },
+      "context": {
+        "scope": "Multiple customers"
+      },
+      "action": {
+        "type": "set_priority",
+        "value": "P1"
+      },
+      "decision": {
+        "field": "priority",
+        "value": "P1"
+      },
+      "importance": "high",
+      "question_candidate": true,
+      "question_reason": "Priority is driven by systemic customer impact."
+    },
+    {
+      "event_id": "evt_013",
+      "timestamp": 90,
+      "event_type": "ticket_opened",
+      "ticket_id": "T006",
+      "screen": {
+        "application": "Support Triage",
+        "active_ticket": "T006"
+      },
+      "context": {
+        "customer": "QRS Ltd",
+        "issue": "Dashboard is slow for several customers",
+        "scope": "Multiple customers"
+      },
+      "action": {
+        "type": "open_ticket",
+        "value": "T006"
+      },
+      "importance": "high",
+      "question_candidate": true,
+      "question_reason": "Repeated reports change severity from isolated to systemic."
+    },
+    {
+      "event_id": "evt_014",
+      "timestamp": 90,
+      "event_type": "decision",
+      "ticket_id": "T006",
+      "screen": {
+        "application": "Support Triage",
+        "active_ticket": "T006"
+      },
+      "context": {
+        "scope": "Multiple customers"
+      },
+      "action": {
+        "type": "set_priority",
+        "value": "P2"
+      },
+      "decision": {
+        "field": "priority",
+        "value": "P2"
+      },
+      "importance": "high",
+      "question_candidate": true,
+      "question_reason": "Multiple customers indicate system-wide performance impact, but not the same severity as a full outage."
+    }
+  ]
+}
