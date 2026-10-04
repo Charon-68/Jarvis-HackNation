@@ -235,3 +235,28 @@ export interface IntegrationError {
   retryable: boolean;
   requestId?: string;
 }
+
+// ---------------------------------------------------------------------------
+// 9. Training Result (CONTRACTS.md §4.10)
+// ---------------------------------------------------------------------------
+
+export interface TrainingResult {
+  id: string;
+  sessionId: string;
+  initialDecision: {
+    priority?: string;
+    team?: string;
+    action?: string;
+  };
+  interventionOccurred: boolean;
+  initialDecisionWrong: boolean;
+  correctionOccurred: boolean;
+  finalDecision: {
+    priority?: string;
+    team?: string;
+    action?: string;
+  };
+  completed: boolean;
+  timestampMs: number;
+}
+
