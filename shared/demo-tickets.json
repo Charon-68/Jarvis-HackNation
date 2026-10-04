@@ -1,20 +1,68 @@
 [
   {
-    "id": "TICKET-001",
-    "title": "Login page crashes on Safari",
-    "description": "Users on Safari 17+ report the login page crashes on submit.",
-    "priority": "high",
-    "status": "open",
-    "createdAt": "2026-10-01T08:00:00Z",
-    "updatedAt": "2026-10-01T08:00:00Z"
+    "id": "T001",
+    "customer": "ABC Corp",
+    "issue": "Production website completely down",
+    "scope": "All customers",
+    "priority": "P1",
+    "team": "Infrastructure",
+    "action": "Immediate escalation",
+    "expertReasoning": "Full production outage affects everyone → P1 and immediate escalation.",
+    "status": "open"
   },
   {
-    "id": "TICKET-002",
-    "title": "Slow dashboard load times",
-    "description": "Dashboard takes >10s to load for accounts with >1000 records.",
-    "priority": "medium",
-    "status": "open",
-    "createdAt": "2026-10-02T09:30:00Z",
-    "updatedAt": "2026-10-02T09:30:00Z"
+    "id": "T002",
+    "customer": "XYZ Ltd",
+    "issue": "One employee cannot log in",
+    "scope": "Single user",
+    "priority": "P3",
+    "team": "Support",
+    "action": "Normal troubleshooting",
+    "expertReasoning": "Single-user login issue is routine unless other users are affected.",
+    "status": "open"
+  },
+  {
+    "id": "T003",
+    "customer": "PQR Inc",
+    "issue": "Customer data disappeared after today's update",
+    "scope": "Potential data loss",
+    "priority": "P1",
+    "team": "Engineering",
+    "action": "STOP normal processing + escalate",
+    "expertReasoning": "Possible data loss is a guardrail: do not ask the customer to modify/retry data; escalate.",
+    "status": "open"
+  },
+  {
+    "id": "T004",
+    "customer": "DEF Ltd",
+    "issue": "Password reset request",
+    "scope": "Single user",
+    "priority": "P3",
+    "team": "Support",
+    "action": "Send reset procedure",
+    "expertReasoning": "Routine request; no escalation needed.",
+    "status": "open"
+  },
+  {
+    "id": "T005",
+    "customer": "LMN Corp",
+    "issue": "API returning errors for many customers",
+    "scope": "Multiple customers",
+    "priority": "P1",
+    "team": "Engineering",
+    "action": "Immediate escalation",
+    "expertReasoning": "Multi-customer API failure indicates a system-wide incident.",
+    "status": "open"
+  },
+  {
+    "id": "T006",
+    "customer": "QRS Ltd",
+    "issue": "Dashboard is slow for several customers",
+    "scope": "Multiple customers",
+    "priority": "P2",
+    "team": "Engineering",
+    "action": "Investigate performance",
+    "expertReasoning": "One slow customer can be routine; multiple customers → possible system-wide performance issue.",
+    "status": "open"
   }
 ]
