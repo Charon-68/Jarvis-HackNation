@@ -1,0 +1,65 @@
+{
+  "workflow": "Customer Support Ticket Triage",
+  "steps": [
+    {
+      "step": 1,
+      "screen_moment": "00:08",
+      "observed_action": "Open T001",
+      "decision": "Identify scope",
+      "why": "I first check whether one customer or everyone is affected. If the whole service is down, do not treat it as routine support.",
+      "guardrail": "Always determine scope before priority.",
+      "teaching_point": "Scope determines severity."
+    },
+    {
+      "step": 2,
+      "screen_moment": "00:18",
+      "observed_action": "T001 \u2192 P1",
+      "decision": "Immediate escalation",
+      "why": "The whole production site is down, so it is P1.",
+      "guardrail": "Full outage \u2192 escalate immediately. P1 is driven by impact, not just wording.",
+      "teaching_point": "Impact drives priority."
+    },
+    {
+      "step": 3,
+      "screen_moment": "00:33",
+      "observed_action": "Open T002",
+      "decision": "P3 support",
+      "why": "Only one person is affected, so I start normal troubleshooting.",
+      "guardrail": "Do not escalate a single-user issue without wider impact.",
+      "teaching_point": "Check whether the issue is isolated."
+    },
+    {
+      "step": 4,
+      "screen_moment": "00:50",
+      "observed_action": "Open T003",
+      "decision": "P1 + STOP",
+      "why": "Missing customer data can become worse if we ask them to change or retry things.",
+      "guardrail": "Possible data loss \u2192 STOP normal processing and escalate.",
+      "teaching_point": "Protect evidence/data before troubleshooting."
+    },
+    {
+      "step": 5,
+      "screen_moment": "01:07",
+      "observed_action": "Open T005",
+      "decision": "P1 engineering",
+      "why": "Many customers seeing API errors means it is probably systemic.",
+      "guardrail": "Multi-customer API failure \u2192 incident handling.",
+      "teaching_point": "Use scope to distinguish local vs systemic issues."
+    },
+    {
+      "step": 6,
+      "screen_moment": "01:24",
+      "observed_action": "Open T006",
+      "decision": "P2 engineering",
+      "why": "Slow for several customers is a performance problem, not just one user's browser.",
+      "guardrail": "Multiple reports \u2192 investigate system-wide impact.",
+      "teaching_point": "Repeated reports change severity."
+    }
+  ],
+  "unseen_case": {
+    "ticket": "T007",
+    "issue": "12 customers lost transaction history after an update",
+    "expected": "P1 + STOP + Engineering",
+    "guardrail": "Possible data loss means stop normal processing and escalate."
+  }
+}
