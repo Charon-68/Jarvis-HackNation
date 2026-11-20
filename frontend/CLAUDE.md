@@ -40,3 +40,6 @@ The plan, art direction and roadmap are in `../docs/BLUEPRINT.md`. Missing facts
 - The legacy `index.css` `h3` style is uppercase and muted. Override it with `normal-case tracking-normal` in new UI.
 - Without Preflight, buttons get UA styles; a minimal reset is in `app.css`.
 - `lucide-react` 1.x has no brand icons (no `Github`).
+- With Preflight off, lists show markers; `ol, ul { list-style: none }` is in the legacy-layer reset.
+- QA for capture in the browser pane: `getDisplayMedia` is blocked there. To reach the recording states, stub it in the page console with a canvas `captureStream()` (inspection only; never in code).
+- `PriorityBadge` is the single source for priority colours: Emergency is `stop`, Moderate is `amber`, Low is neutral.

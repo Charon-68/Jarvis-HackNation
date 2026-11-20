@@ -2,7 +2,9 @@
  * P1-02, P1-04 — Ticket Queue (left panel)
  * Shows the list of tickets; highlights the active one.
  */
+import { CheckCircle2 } from "lucide-react";
 import type { Ticket } from "../types/index";
+import PriorityBadge from "./ui/PriorityBadge";
 
 interface TicketQueueProps {
   tickets: Ticket[];
@@ -12,126 +14,54 @@ interface TicketQueueProps {
   disabled?: boolean;
 }
 
-function priorityClass(p: string) {
-  if (p === "Emergency") return "badge-emergency";
-  if (p === "Moderate") return "badge-moderate";
-  return "badge-low";
-}
+export default function TicketQueue({ tickets, activeTicketId, solvedTicketIds, onSelect, disabled }: TicketQueueProps) {
+  const solved = tickets.filter((t) => solvedTicketIds.includes(t.id)).length;
 
-export default function TicketQueue({
-  tickets,
-  activeTicketId,
-  solvedTicketIds,
-  onSelect,
-  disabled,
-}: TicketQueueProps) {
   return (
-    <div className="flex-col gap-1" style={{ height: "100%", display: "flex" }}>
-      <div className="card-header" style={{ padding: "14px 16px" }}>
-        <h3 style={{ margin: 0 }}>Open Tickets</h3>
-        <span
-          className="badge badge-neutral"
-          style={{ fontSize: 11 }}
-        >
+    <div className="flex h-full flex-col">
+      <div className="flex shrink-0 items-center justify-between border-b border-line px-4 py-3.5">
+        <h3 className="hud-tag m-0 text-fg-faint">Open tickets</h3>
+        <span className="font-mono text-[11px] text-fg-muted">
+          {solved > 0 && <span className="text-verified">{solved}/</span>}
           {tickets.length}
         </span>
       </div>
 
-      <div
-        className="scroll-y"
-        style={{ flex: 1, padding: "8px 8px" }}
-      >
+      <ul className="min-h-0 flex-1 overflow-y-auto p-2" aria-label="Tickets">
         {tickets.map((t) => {
           const isActive = t.id === activeTicketId;
           const isSolved = solvedTicketIds.includes(t.id);
 
           return (
-            <button
-              key={t.id}
-              onClick={() => !disabled && onSelect(t.id)}
-              disabled={disabled}
-              style={{
-                width: "100%",
-                display: "flex",
-                flexDirection: "column",
-                gap: 4,
-                padding: "10px 12px",
-                borderRadius: "var(--radius-md)",
-                border: `1px solid ${isActive ? "var(--brand-primary)" : "transparent"}`,
-                background: isActive
-                  ? "var(--brand-primary-dim)"
-                  : isSolved
-                  ? "rgba(16,185,129,0.05)"
-                  : "transparent",
-                cursor: disabled ? "not-allowed" : "pointer",
-                textAlign: "left",
-                transition: "all var(--transition-default)",
-                marginBottom: 2,
-                opacity: disabled ? 0.6 : 1,
-              }}
-              onMouseEnter={(e) => {
-                if (!isActive && !disabled)
-                  (e.currentTarget as HTMLElement).style.background = "var(--bg-hover)";
-              }}
-              onMouseLeave={(e) => {
-                (e.currentTarget as HTMLElement).style.background = isActive
-                  ? "var(--brand-primary-dim)"
-                  : isSolved
-                  ? "rgba(16,185,129,0.05)"
-                  : "transparent";
-              }}
-            >
-              <div className="flex items-center gap-2" style={{ justifyContent: "space-between" }}>
-                <span
-                  style={{
-                    fontFamily: "var(--font-mono, monospace)",
-                    fontSize: 12,
-                    fontWeight: 600,
-                    color: isActive ? "var(--brand-primary)" : "var(--text-secondary)",
-                  }}
-                >
-                  {t.id}
-                </span>
-                <span className={`badge ${priorityClass(t.priority)}`}>{t.priority}</span>
-              </div>
-
-              <span
-                style={{
-                  fontSize: 12,
-                  color: isSolved ? "var(--text-muted)" : "var(--text-primary)",
-                  fontWeight: 500,
-                  lineHeight: 1.3,
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  whiteSpace: "nowrap",
-                  maxWidth: "100%",
-                }}
+            <li key={t.id} className="mb-0.5">
+              <button
+                onClick={() => !disabled && onSelect(t.id)}
+                disabled={disabled}
+                aria-current={isActive ? "true" : undefined}
+                className={`focus-ring group relative flex w-full flex-col gap-1 overflow-hidden rounded-lg px-3 py-2.5 text-left transition ${
+                  isActive
+                    ? "bg-signal/[0.07] ring-1 ring-signal/30"
+                    : "hover:bg-raised disabled:hover:bg-transparent"
+                } ${disabled ? "cursor-not-allowed opacity-60" : ""}`}
               >
-                {t.customer}
-              </span>
-
-              <span
-                style={{
-                  fontSize: 11,
-                  color: "var(--text-muted)",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  whiteSpace: "nowrap",
-                  maxWidth: "100%",
-                }}
-              >
-                {t.issue}
-              </span>
-
-              {isSolved && (
-                <span style={{ fontSize: 10, color: "var(--success)", fontWeight: 600 }}>
-                  ✓ Saved
+                {isActive && <span className="absolute inset-y-2 left-0 w-0.5 rounded-full bg-signal" aria-hidden />}
+                <span className="flex items-center justify-between gap-2">
+                  <span className={`font-mono text-xs font-medium ${isActive ? "text-signal" : "text-fg-muted"}`}>{t.id}</span>
+                  {isSolved ? (
+                    <span className="flex items-center gap-1 text-[10.5px] font-medium text-verified">
+                      <CheckCircle2 className="size-3" aria-hidden /> Saved
+                    </span>
+                  ) : (
+                    <PriorityBadge priority={t.priority} />
+                  )}
                 </span>
-              )}
-            </button>
+                <span className={`truncate text-[12.5px] font-medium ${isSolved ? "text-fg-muted" : "text-fg"}`}>{t.customer}</span>
+                <span className="truncate text-[11.5px] text-fg-faint">{t.issue}</span>
+              </button>
+            </li>
           );
         })}
-      </div>
+      </ul>
     </div>
   );
 }

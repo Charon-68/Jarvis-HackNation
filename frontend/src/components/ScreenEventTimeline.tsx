@@ -4,6 +4,8 @@
  * Filters out raw Claude output or internal JSON.
  */
 
+import { AnimatePresence, motion } from "motion/react";
+import { FolderOpen, Gauge, Radio, Save, Users, Zap, type LucideIcon } from "lucide-react";
 import type { ScreenEvent } from "../types/index";
 
 interface ScreenEventTimelineProps {
@@ -23,99 +25,63 @@ function formatEventTime(timestampMs: number): string {
   });
 }
 
-function getEventBadgeColor(type: string): { bg: string; border: string; text: string; icon: string } {
-  switch (type) {
-    case "ticket_opened":
-      return { bg: "rgba(200, 246, 90, 0.12)", border: "rgba(200, 246, 90, 0.3)", text: "#c8f65a", icon: "📂" };
-    case "priority_changed":
-      return { bg: "rgba(245, 158, 11, 0.12)", border: "rgba(245, 158, 11, 0.3)", text: "#fbbf24", icon: "🎯" };
-    case "team_changed":
-      return { bg: "rgba(59, 130, 246, 0.12)", border: "rgba(59, 130, 246, 0.3)", text: "#60a5fa", icon: "👥" };
-    case "action_changed":
-      return { bg: "rgba(239, 68, 68, 0.12)", border: "rgba(239, 68, 68, 0.3)", text: "#f87171", icon: "⚡" };
-    case "decision_saved":
-      return { bg: "rgba(16, 185, 129, 0.12)", border: "rgba(16, 185, 129, 0.3)", text: "#34d399", icon: "💾" };
-    default:
-      return { bg: "var(--bg-raised)", border: "var(--border-subtle)", text: "var(--text-secondary)", icon: "📡" };
-  }
-}
+const TYPE: Record<string, { icon: LucideIcon; tone: string }> = {
+  ticket_opened: { icon: FolderOpen, tone: "text-signal" },
+  priority_changed: { icon: Gauge, tone: "text-amber" },
+  team_changed: { icon: Users, tone: "text-fg-muted" },
+  action_changed: { icon: Zap, tone: "text-stop" },
+  decision_saved: { icon: Save, tone: "text-verified" },
+};
+const FALLBACK = { icon: Radio, tone: "text-fg-faint" };
 
-export default function ScreenEventTimeline({
-  events,
-  maxItems = 10,
-  highlightedEventId,
-  onSelectEvent,
-}: ScreenEventTimelineProps) {
+export default function ScreenEventTimeline({ events, maxItems = 10, highlightedEventId, onSelectEvent }: ScreenEventTimelineProps) {
   const displayEvents = [...events].reverse().slice(0, maxItems);
 
   if (displayEvents.length === 0) {
-    return (
-      <div style={{ color: "var(--text-muted)", fontSize: 11.5, padding: "8px 0", textAlign: "center" }}>
-        No screen activity recorded yet.
-      </div>
-    );
+    return <p className="py-2 text-center text-[11.5px] text-fg-faint">No screen activity recorded yet.</p>;
   }
 
   return (
-    <div className="flex-col gap-2" style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-      {displayEvents.map((evt) => {
-        const style = getEventBadgeColor(evt.type);
-        const isHighlighted = highlightedEventId === evt.id;
+    <ol className="relative flex flex-col">
+      {/* spine */}
+      <span className="absolute bottom-3 left-[11px] top-3 w-px bg-line-strong" aria-hidden />
+      <AnimatePresence initial={false}>
+        {displayEvents.map((evt) => {
+          const t = TYPE[evt.type] ?? FALLBACK;
+          const Icon = t.icon;
+          const isHighlighted = highlightedEventId === evt.id;
+          const Tag = onSelectEvent ? "button" : "div";
 
-        return (
-          <div
-            key={evt.id}
-            className="fade-in"
-            onClick={() => onSelectEvent?.(evt)}
-            style={{
-              display: "flex",
-              alignItems: "flex-start",
-              gap: 8,
-              padding: "7px 10px",
-              borderRadius: "var(--radius-sm)",
-              background: isHighlighted ? style.bg : "var(--bg-raised)",
-              border: `1px solid ${isHighlighted ? style.border : "var(--border-subtle)"}`,
-              fontSize: 11.5,
-              cursor: onSelectEvent ? "pointer" : "default",
-              transition: "all 0.15s ease",
-            }}
-          >
-            <span style={{ flexShrink: 0, fontSize: 13, lineHeight: 1.2 }}>{style.icon}</span>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 6 }}>
-                <span style={{ fontWeight: 700, color: "var(--text-primary)" }}>
-                  {evt.ticketId ? `Ticket ${evt.ticketId}` : "Workflow"}
+          return (
+            <motion.li
+              key={evt.id}
+              layout
+              initial={{ opacity: 0, x: -6 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+            >
+              <Tag
+                {...(onSelectEvent ? { onClick: () => onSelectEvent(evt), type: "button" as const } : {})}
+                className={`relative flex w-full items-start gap-2.5 rounded-md py-1.5 pr-1 text-left text-[11.5px] ${
+                  onSelectEvent ? "focus-ring cursor-pointer hover:bg-raised/60" : ""
+                } ${isHighlighted ? "bg-signal/[0.06]" : ""}`}
+              >
+                <span className="relative z-10 grid size-[23px] shrink-0 place-items-center rounded-full border border-line bg-surface">
+                  <Icon className={`size-3 ${t.tone}`} aria-hidden />
                 </span>
-                <span style={{ fontSize: 9.5, color: "var(--text-muted)" }}>
-                  {formatEventTime(evt.timestampMs)}
-                </span>
-              </div>
-
-              <div style={{ color: "var(--text-secondary)", marginTop: 2, lineHeight: 1.4 }}>
-                {evt.description}
-              </div>
-
-              {evt.newValue && (
-                <div style={{ marginTop: 3 }}>
-                  <span
-                    style={{
-                      fontSize: 10.5,
-                      fontWeight: 600,
-                      color: style.text,
-                      background: style.bg,
-                      border: `1px solid ${style.border}`,
-                      borderRadius: 4,
-                      padding: "1px 5px",
-                    }}
-                  >
-                    → {evt.newValue}
+                <span className="min-w-0 flex-1">
+                  <span className="flex items-center justify-between gap-2">
+                    <span className="font-mono text-[11px] font-medium text-fg">{evt.ticketId ?? "Workflow"}</span>
+                    <span className="font-mono text-[10px] text-fg-faint">{formatEventTime(evt.timestampMs)}</span>
                   </span>
-                </div>
-              )}
-            </div>
-          </div>
-        );
-      })}
-    </div>
+                  <span className="mt-0.5 block leading-snug text-fg-muted">{evt.description}</span>
+                  {evt.newValue && <span className={`mt-1 inline-block font-mono text-[10.5px] ${t.tone}`}>→ {evt.newValue}</span>}
+                </span>
+              </Tag>
+            </motion.li>
+          );
+        })}
+      </AnimatePresence>
+    </ol>
   );
 }

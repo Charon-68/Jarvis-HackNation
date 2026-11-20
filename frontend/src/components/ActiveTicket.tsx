@@ -2,13 +2,10 @@
  * P1-02, P1-04 — Active Ticket Workspace (center panel)
  * Shows ticket details, priority/team/action selectors, and Save button.
  */
-import type {
-  Ticket,
-  TicketPriority,
-  TicketTeam,
-  TicketAction,
-  DecisionEvaluationResult,
-} from "../types/index";
+import { AnimatePresence, motion } from "motion/react";
+import { CheckCircle2, ChevronDown, Image as ImageIcon, OctagonAlert, TriangleAlert, Users, Wrench } from "lucide-react";
+import type { Ticket, TicketPriority, TicketTeam, TicketAction, DecisionEvaluationResult } from "../types/index";
+import PriorityBadge from "./ui/PriorityBadge";
 
 interface ActiveTicketProps {
   ticket: Ticket | null;
@@ -22,13 +19,7 @@ interface ActiveTicketProps {
 }
 
 const PRIORITIES: TicketPriority[] = ["Emergency", "Moderate", "Low Priority"];
-const TEAMS: TicketTeam[] = [
-  "Operations",
-  "HR",
-  "Engineering",
-  "Customer Support",
-  "Accounting",
-];
+const TEAMS: TicketTeam[] = ["Operations", "HR", "Engineering", "Customer Support", "Accounting"];
 const ACTIONS: TicketAction[] = [
   "Escalate Immediately",
   "Investigate & Resolve",
@@ -37,22 +28,46 @@ const ACTIONS: TicketAction[] = [
   "Monitor & Follow Up",
 ];
 
-function priorityColor(p: string) {
-  if (p === "Emergency") return "var(--emergency-text)";
-  if (p === "Moderate") return "var(--moderate-text)";
-  return "var(--low-text)";
-}
+const EASE = [0.16, 1, 0.3, 1] as const;
 
-function priorityBg(p: string) {
-  if (p === "Emergency") return "var(--emergency-bg)";
-  if (p === "Moderate") return "var(--moderate-bg)";
-  return "var(--low-bg)";
-}
-
-function priorityBorder(p: string) {
-  if (p === "Emergency") return "var(--emergency-border)";
-  if (p === "Moderate") return "var(--moderate-border)";
-  return "var(--low-border)";
+function Field({
+  id,
+  label,
+  value,
+  options,
+  disabled,
+  onChange,
+}: {
+  id: string;
+  label: string;
+  value: string;
+  options: readonly string[];
+  disabled?: boolean;
+  onChange: (v: string) => void;
+}) {
+  return (
+    <div className="flex flex-col gap-1.5">
+      <label htmlFor={id} className="hud-tag text-fg-faint">
+        {label}
+      </label>
+      <div className="relative">
+        <select
+          id={id}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          disabled={disabled}
+          className="focus-ring w-full cursor-pointer appearance-none rounded-lg border border-line bg-ink/60 py-2.5 pl-3 pr-9 text-[13.5px] font-medium text-fg transition hover:border-line-strong focus:border-signal/60 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {options.map((o) => (
+            <option key={o} value={o}>
+              {o}
+            </option>
+          ))}
+        </select>
+        <ChevronDown className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-fg-faint" aria-hidden />
+      </div>
+    </div>
+  );
 }
 
 export default function ActiveTicket({
@@ -71,236 +86,162 @@ export default function ActiveTicket({
 
   const canSave = !!ticket && !disabled && !isSaving;
   const intervention = evaluationResult?.intervention;
+  const saved = !!evaluationResult?.allowSave;
 
   const handleSave = async () => {
     if (!canSave || !ticket) return;
     await onSave({ priority: ticket.priority, team: ticket.team, action: ticket.action });
   };
 
+  const change = (field: "priority" | "team" | "action") => (val: string) => {
+    onClearEvaluation();
+    if (onFieldChange) onFieldChange(field, val);
+  };
+
   if (!ticket) {
     return (
-      <div
-        style={{
-          height: "100%",
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: 12,
-          color: "var(--text-muted)",
-        }}
-      >
-        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2">
-          <rect x="3" y="3" width="18" height="18" rx="2" />
-          <path d="M3 9h18M9 21V9" />
-        </svg>
-        <span style={{ fontSize: 14 }}>Select a ticket to begin</span>
+      <div className="flex h-full flex-col items-center justify-center gap-3 px-6 text-center">
+        <div className="grid size-14 place-items-center rounded-2xl border border-line bg-raised/60">
+          <Wrench className="size-6 text-fg-faint" aria-hidden />
+        </div>
+        <p className="text-sm font-medium text-fg">Select a ticket to begin</p>
+        <p className="max-w-[32ch] text-xs text-fg-muted">
+          {disabled ? "Start recording, then pick a ticket from the queue." : "Pick a ticket from the queue to triage it."}
+        </p>
       </div>
     );
   }
 
   return (
-    <div className="flex-col" style={{ height: "100%", overflow: "hidden", display: "flex" }}>
+    <div className="flex h-full flex-col overflow-hidden">
       {/* Ticket header */}
-      <div className="card-header">
-        <div className="flex items-center gap-3">
-          <span
-            style={{
-              fontFamily: "monospace",
-              fontSize: 13,
-              fontWeight: 700,
-              color: "var(--brand-primary)",
-              background: "var(--brand-primary-dim)",
-              padding: "4px 10px",
-              borderRadius: "var(--radius-sm)",
-            }}
-          >
+      <div className="flex shrink-0 items-center justify-between gap-3 border-b border-line px-5 py-3.5">
+        <div className="flex min-w-0 items-center gap-3">
+          <span className="shrink-0 rounded-md bg-signal/10 px-2 py-1 font-mono text-[13px] font-medium text-signal ring-1 ring-signal/25">
             {ticket.id}
           </span>
-          <div>
-            <div style={{ fontWeight: 600, fontSize: 14 }}>{ticket.customer}</div>
-            <div style={{ fontSize: 12, color: "var(--text-secondary)" }}>
-              {mode === "expert" ? "Expert Workspace" : "Training Workspace"}
-            </div>
+          <div className="min-w-0">
+            <div className="truncate text-sm font-medium text-fg">{ticket.customer}</div>
+            <div className="hud-tag text-fg-faint">{mode === "expert" ? "Expert workspace" : "Training workspace"}</div>
           </div>
         </div>
-        <span
-          style={{
-            fontSize: 11,
-            fontWeight: 600,
-            padding: "4px 10px",
-            borderRadius: "var(--radius-pill)",
-            background: priorityBg(priority),
-            color: priorityColor(priority),
-            border: `1px solid ${priorityBorder(priority)}`,
-          }}
-        >
-          {priority}
-        </span>
+        <PriorityBadge priority={priority} size="md" />
       </div>
 
       {/* Ticket body */}
-      <div className="scroll-y" style={{ flex: 1, padding: "16px 20px" }}>
-        {/* Issue + Scope */}
-        <div className="flex-col gap-3" style={{ marginBottom: 20 }}>
-          <div>
-            <div className="field-label">Issue</div>
-            <p style={{ fontSize: 14, fontWeight: 500, color: "var(--text-primary)", lineHeight: 1.5 }}>
-              {ticket.issue}
-            </p>
-          </div>
-          <div>
-            <div className="field-label">Scope</div>
-            <span className="chip">{ticket.scope}</span>
-          </div>
-        </div>
-
-        <div className="divider" />
-
-        {/* Decision fields */}
-        <div className="flex-col gap-4" style={{ marginBottom: 20 }}>
-          <div className="field-group">
-            <label className="field-label" htmlFor="priority-select">Priority</label>
-            <select
-              id="priority-select"
-              className="select-field"
-              value={priority}
-              onChange={(e) => {
-                const val = e.target.value as TicketPriority;
-                onClearEvaluation();
-                if (onFieldChange) onFieldChange("priority", val);
-              }}
-              disabled={disabled}
-            >
-              {PRIORITIES.map((p) => <option key={p} value={p}>{p}</option>)}
-            </select>
-          </div>
-
-          <div className="field-group">
-            <label className="field-label" htmlFor="team-select">Team</label>
-            <select
-              id="team-select"
-              className="select-field"
-              value={team}
-              onChange={(e) => {
-                const val = e.target.value as TicketTeam;
-                onClearEvaluation();
-                if (onFieldChange) onFieldChange("team", val);
-              }}
-              disabled={disabled}
-            >
-              {TEAMS.map((t) => <option key={t} value={t}>{t}</option>)}
-            </select>
-          </div>
-
-          <div className="field-group">
-            <label className="field-label" htmlFor="action-select">Action</label>
-            <select
-              id="action-select"
-              className="select-field"
-              value={action}
-              onChange={(e) => {
-                const val = e.target.value as TicketAction;
-                onClearEvaluation();
-                if (onFieldChange) onFieldChange("action", val);
-              }}
-              disabled={disabled}
-            >
-              {ACTIONS.map((a) => <option key={a} value={a}>{a}</option>)}
-            </select>
-          </div>
-        </div>
-
-        {/* Save button */}
-        <button
-          id="save-decision-btn"
-          className={`btn btn-lg ${evaluationResult?.allowSave ? "btn-success" : "btn-primary"}`}
-          style={{ width: "100%" }}
-          onClick={handleSave}
-          disabled={!canSave}
-        >
-          {isSaving ? (
-            <><span className="spinner" /> Evaluating…</>
-          ) : evaluationResult?.allowSave ? (
-            <>✓ Decision Saved</>
-          ) : (
-            <>Save Decision</>
-          )}
-        </button>
-
-        {/* Intervention banner */}
-        {intervention && (
-          <div
-            className={`intervention-banner ${intervention.severity === "critical" ? "intervention-critical" : "intervention-warning"}`}
-            style={{ marginTop: 16 }}
-          >
-            <div
-              className="flex items-center gap-2"
-              style={{ marginBottom: 10 }}
-            >
-              <span style={{ fontSize: 18 }}>
-                {intervention.severity === "critical" ? "🚨" : "⚠️"}
-              </span>
-              <span style={{ fontWeight: 700, color: intervention.severity === "critical" ? "var(--danger)" : "var(--warning)" }}>
-                {intervention.severity === "critical" ? "CRITICAL — Check This Decision" : "Decision Needs Review"}
-              </span>
-            </div>
-
-            <p style={{ fontSize: 13, marginBottom: 12, lineHeight: 1.6 }}>
-              {intervention.message}
-            </p>
-
-            {intervention.guardrail && (
-              <div
-                style={{
-                  background: "rgba(0,0,0,0.2)",
-                  borderRadius: "var(--radius-sm)",
-                  padding: "8px 12px",
-                  marginBottom: 12,
-                  borderLeft: "3px solid var(--danger)",
-                }}
-              >
-                <div className="field-label" style={{ marginBottom: 4 }}>Expert Rule</div>
-                <p style={{ fontSize: 12, color: "var(--text-secondary)" }}>{intervention.guardrail}</p>
-              </div>
-            )}
-
-            <div className="flex gap-2" style={{ flexWrap: "wrap" }}>
-              <button
-                className="btn btn-sm btn-secondary"
-                onClick={onClearEvaluation}
-              >
-                Fix Decision
-              </button>
-              {intervention.expertEvidence && (
-                <button className="btn btn-sm btn-secondary">
-                  📷 View Expert Evidence
-                </button>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Success state */}
-        {evaluationResult?.allowSave && (
-          <div
-            style={{
-              background: "var(--success-dim)",
-              border: "1px solid rgba(16,185,129,0.3)",
-              borderRadius: "var(--radius-md)",
-              padding: "12px 16px",
-              marginTop: 16,
-              display: "flex",
-              alignItems: "center",
-              gap: 10,
-            }}
-          >
-            <span style={{ fontSize: 18 }}>✅</span>
-            <span style={{ fontSize: 13, color: "var(--success)", fontWeight: 600 }}>
-              Correct decision — matches expert knowledge
+      <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5">
+        <div className="mx-auto max-w-2xl">
+          {/* Issue + scope */}
+          <p className="hud-tag mb-2 text-fg-faint">Issue</p>
+          <p className="text-[17px] font-medium leading-snug text-fg">{ticket.issue}</p>
+          <div className="mt-4 flex flex-wrap items-center gap-2">
+            <span className="hud-tag text-fg-faint">Scope</span>
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-line bg-raised px-2.5 py-1 text-xs text-fg-muted">
+              <Users className="size-3.5" aria-hidden />
+              {ticket.scope}
             </span>
           </div>
-        )}
+
+          <div className="my-6 h-px bg-line" />
+
+          {/* Decision */}
+          <p className="hud-tag mb-4 text-fg-faint">Triage decision</p>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field id="priority-select" label="Priority" value={priority} options={PRIORITIES} disabled={disabled} onChange={change("priority")} />
+            <Field id="team-select" label="Team" value={team} options={TEAMS} disabled={disabled} onChange={change("team")} />
+            <div className="sm:col-span-2">
+              <Field id="action-select" label="Action" value={action} options={ACTIONS} disabled={disabled} onChange={change("action")} />
+            </div>
+          </div>
+
+          <button
+            id="save-decision-btn"
+            onClick={handleSave}
+            disabled={!canSave}
+            className={`focus-ring mt-6 flex w-full items-center justify-center gap-2 rounded-xl px-5 py-3 text-[15px] font-medium transition disabled:cursor-not-allowed ${
+              saved
+                ? "bg-verified/15 text-verified ring-1 ring-verified/40"
+                : "bg-signal text-signal-ink shadow-[0_0_28px_rgba(200,246,90,0.18)] hover:bg-[#d6ff78] disabled:opacity-40 disabled:shadow-none"
+            }`}
+          >
+            {isSaving ? (
+              <>
+                <span className="size-4 animate-spin rounded-full border-2 border-current/30 border-t-current" /> Evaluating…
+              </>
+            ) : saved ? (
+              <>
+                <CheckCircle2 className="size-4" aria-hidden /> Decision saved
+              </>
+            ) : (
+              <>Save decision</>
+            )}
+          </button>
+
+          <AnimatePresence>
+            {/* Intervention */}
+            {intervention && (
+              <motion.div
+                key="intervention"
+                role="alert"
+                initial={{ opacity: 0, y: 10, scale: 0.98 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -6 }}
+                transition={{ duration: 0.35, ease: EASE }}
+                className={`mt-5 overflow-hidden rounded-xl border ${
+                  intervention.severity === "critical" ? "border-stop/40 bg-stop/[0.08]" : "border-amber/35 bg-amber/[0.07]"
+                }`}
+              >
+                <div className="flex items-center gap-2.5 px-4 pt-4">
+                  {intervention.severity === "critical" ? (
+                    <OctagonAlert className="size-5 text-stop" aria-hidden />
+                  ) : (
+                    <TriangleAlert className="size-5 text-amber" aria-hidden />
+                  )}
+                  <span className={`text-sm font-semibold ${intervention.severity === "critical" ? "text-stop" : "text-amber"}`}>
+                    {intervention.severity === "critical" ? "Check this decision" : "Decision needs review"}
+                  </span>
+                </div>
+                <p className="px-4 pt-2 text-[13.5px] leading-relaxed text-fg">{intervention.message}</p>
+
+                {intervention.guardrail && (
+                  <figure className="mx-4 mt-4 border-l-2 border-stop/60 pl-4">
+                    <figcaption className="hud-tag mb-1 text-fg-faint">Expert rule</figcaption>
+                    <blockquote className="font-display text-[19px] leading-snug text-fg">{intervention.guardrail}</blockquote>
+                  </figure>
+                )}
+
+                <div className="mt-4 flex flex-wrap gap-2 border-t border-line bg-ink/30 px-4 py-3">
+                  <button
+                    onClick={onClearEvaluation}
+                    className="focus-ring rounded-lg border border-line-strong bg-raised px-3 py-1.5 text-xs font-medium text-fg transition hover:border-fg-faint"
+                  >
+                    Fix decision
+                  </button>
+                  {intervention.expertEvidence && (
+                    <button className="focus-ring flex items-center gap-1.5 rounded-lg border border-line bg-raised px-3 py-1.5 text-xs text-fg-muted transition hover:text-fg">
+                      <ImageIcon className="size-3.5" aria-hidden /> View expert evidence
+                    </button>
+                  )}
+                </div>
+              </motion.div>
+            )}
+
+            {/* Success */}
+            {saved && (
+              <motion.div
+                key="saved"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.3, ease: EASE }}
+                className="mt-4 flex items-center gap-2.5 rounded-xl border border-verified/30 bg-verified/[0.08] px-4 py-3"
+              >
+                <CheckCircle2 className="size-4 text-verified" aria-hidden />
+                <span className="text-[13px] font-medium text-verified">Correct decision: matches expert knowledge</span>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
       </div>
     </div>
   );

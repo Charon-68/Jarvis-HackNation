@@ -4,7 +4,7 @@
  * < 1024px: a segmented tab bar shows one pane at a time. Hidden panes stay
  * mounted (CSS only), so live state such as the voice panel is preserved.
  */
-import { useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import type { LucideIcon } from "lucide-react";
 
 export interface Pane {
@@ -18,8 +18,23 @@ export interface Pane {
   badge?: ReactNode;
 }
 
-export default function Workspace({ panes, initial }: { panes: Pane[]; initial?: string }) {
+export default function Workspace({
+  panes,
+  initial,
+  follow,
+}: {
+  panes: Pane[];
+  initial?: string;
+  /** When `key` changes, the tab bar jumps to `pane` (e.g. show the ticket after picking one). */
+  follow?: { pane: string; key: unknown };
+}) {
   const [active, setActive] = useState(initial ?? panes[0]?.id);
+  const lastKey = useRef(follow?.key);
+  useEffect(() => {
+    if (!follow || follow.key === lastKey.current) return;
+    lastKey.current = follow.key;
+    if (follow.key != null) setActive(follow.pane);
+  }, [follow]);
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">

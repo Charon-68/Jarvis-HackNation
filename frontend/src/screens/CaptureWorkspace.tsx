@@ -4,7 +4,7 @@
  * with session controls bottom bar and real ElevenLabs voice integration.
  */
 import Workspace from "../components/shell/Workspace";
-import { FileText, ListTodo, Sparkles } from "lucide-react";
+import { EyeOff, FileText, ListTodo, MonitorX, Sparkles } from "lucide-react";
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useSession } from "../store/sessionStore";
 import { listTickets, EXPERT_SEQUENCE } from "../data/ticketRepository";
@@ -357,51 +357,29 @@ export default function CaptureWorkspace() {
 
   return (
     <div style={{ height: "100%", display: "flex", flexDirection: "column", overflow: "hidden" }}>
-      {/* Paused overlay banner */}
+      {/* Paused: off the record */}
       {isCapturingPaused && (
-        <div
-          style={{
-            background: "var(--warning-dim)",
-            borderBottom: "1px solid rgba(245,158,11,0.3)",
-            padding: "8px 20px",
-            display: "flex",
-            alignItems: "center",
-            gap: 10,
-            fontSize: 13,
-            fontWeight: 600,
-            color: "var(--warning)",
-            flexShrink: 0,
-          }}
-        >
-          <span className="status-dot paused" />
-          Off Record — AI is not listening. Resume to continue capture.
+        <div role="status" className="flex shrink-0 items-center gap-2.5 border-b border-amber/30 bg-amber/[0.08] px-5 py-2 text-[13px] font-medium text-amber">
+          <EyeOff className="size-4" aria-hidden />
+          Off the record. The Apprentice isn&apos;t listening; resume to continue capture.
         </div>
       )}
 
-      {/* Error / Permission denied banner */}
+      {/* Error / permission denied */}
       {captureState.error && (
-        <div
-          style={{
-            background: "rgba(239, 68, 68, 0.15)",
-            borderBottom: "1px solid rgba(239, 68, 68, 0.3)",
-            padding: "8px 20px",
-            display: "flex",
-            alignItems: "center",
-            gap: 10,
-            fontSize: 13,
-            fontWeight: 600,
-            color: "#f87171",
-            flexShrink: 0,
-          }}
-        >
-          <span className="status-dot error" style={{ background: "#ef4444" }} />
-          Capture Note: {captureState.error}
+        <div role="alert" className="flex shrink-0 items-center gap-2.5 border-b border-stop/30 bg-stop/[0.08] px-5 py-2 text-[13px] text-stop">
+          <MonitorX className="size-4 shrink-0" aria-hidden />
+          <span className="min-w-0 truncate">
+            <span className="font-medium">Capture: </span>
+            {captureState.error}
+          </span>
         </div>
       )}
 
       {/* Three-pane workspace (tabs below 1024px) */}
       <Workspace
         initial="ticket"
+        follow={{ pane: "ticket", key: activeTicketId }}
         panes={[
           {
             id: "queue",
