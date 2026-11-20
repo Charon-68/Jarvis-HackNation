@@ -7,9 +7,7 @@
  * The original ElevenLabs prototype is preserved as "LegacyPrototype" and
  * accessible via the toggle in the top-right corner.
  */
-import "./index.css";
-
-import { useRef, useState } from "react";
+import { lazy, Suspense, useRef, useState } from "react";
 import { useConversation } from "@elevenlabs/react";
 import events from "../screen_events.json";
 
@@ -19,6 +17,9 @@ import CaptureWorkspace from "./screens/CaptureWorkspace";
 import DebriefScreen from "./screens/DebriefScreen";
 import WorkMapScreen from "./screens/WorkMapScreen";
 import TrainingWorkspace from "./screens/TrainingWorkspace";
+import { flag, navigate, useRoute } from "./lib/route";
+
+const Landing = lazy(() => import("./landing/Landing"));
 
 // ---------------------------------------------------------------------------
 // Phase router — inner component (needs session context)
@@ -95,7 +96,7 @@ function AppRouter() {
           <span
             style={{
               fontSize: 18,
-              background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
+              background: "linear-gradient(135deg, #c8f65a, #7fae2a)",
               WebkitBackgroundClip: "text",
               WebkitTextFillColor: "transparent",
               fontWeight: 800,
@@ -362,30 +363,42 @@ function formatTime(seconds: number) {
 // ---------------------------------------------------------------------------
 
 export default function App() {
+  const route = useRoute();
+  // The legacy ElevenLabs prototype is a dev/QA tool: only reachable via ?legacy=1.
+  const legacyEnabled = flag("legacy") === "1";
   const [showLegacy, setShowLegacy] = useState(false);
+
+  if (route === "landing" && !legacyEnabled) {
+    return (
+      <Suspense fallback={<div style={{ height: "100vh", background: "var(--bg-base)" }} />}>
+        <Landing onLaunch={() => navigate("app")} />
+      </Suspense>
+    );
+  }
 
   return (
     <>
-      {/* Legacy toggle button (always visible) */}
-      <button
-        onClick={() => setShowLegacy((v) => !v)}
-        style={{
-          position: "fixed",
-          bottom: 16,
-          right: 16,
-          zIndex: 9999,
-          fontSize: 11,
-          padding: "6px 12px",
-          background: showLegacy ? "#6366f1" : "#1a1d27",
-          color: "#fff",
-          border: "1px solid rgba(255,255,255,0.15)",
-          borderRadius: 99,
-          cursor: "pointer",
-          fontFamily: "inherit",
-        }}
-      >
-        {showLegacy ? "← New App" : "Legacy Prototype"}
-      </button>
+      {legacyEnabled && (
+        <button
+          onClick={() => setShowLegacy((v) => !v)}
+          style={{
+            position: "fixed",
+            bottom: 16,
+            right: 16,
+            zIndex: 9999,
+            fontSize: 11,
+            padding: "6px 12px",
+            background: showLegacy ? "var(--brand-primary)" : "var(--bg-raised)",
+            color: showLegacy ? "#0b0d05" : "#fff",
+            border: "1px solid rgba(255,255,255,0.15)",
+            borderRadius: 99,
+            cursor: "pointer",
+            fontFamily: "inherit",
+          }}
+        >
+          {showLegacy ? "← New App" : "Legacy Prototype"}
+        </button>
+      )}
 
       {showLegacy ? (
         <LegacyPrototype />

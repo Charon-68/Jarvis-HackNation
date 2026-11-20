@@ -6,19 +6,29 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "typecheck": "tsc -b",
     "test": "npx tsx src/tests/runAllTests.ts",
     "preview": "vite preview"
   },
   "dependencies": {
-    "@elevenlabs/react": "latest",
-    "@vitejs/plugin-react": "latest",
-    "react": "latest",
-    "react-dom": "latest",
-    "typescript": "latest",
-    "vite": "latest"
+    "@elevenlabs/react": "1.16.0",
+    "@fontsource-variable/geist": "5.3.0",
+    "@fontsource-variable/geist-mono": "5.3.0",
+    "@fontsource/instrument-serif": "5.3.0",
+    "lucide-react": "1.77.0",
+    "motion": "14.14.0",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "three": "0.187.0"
   },
   "devDependencies": {
-    "@types/react": "^19.3.0",
-    "@types/react-dom": "^19.3.0"
+    "@tailwindcss/vite": "4.3.5",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@types/three": "0.187.0",
+    "@vitejs/plugin-react": "6.1.1",
+    "tailwindcss": "4.3.5",
+    "typescript": "7.0.2",
+    "vite": "8.3.2"
   }
 }

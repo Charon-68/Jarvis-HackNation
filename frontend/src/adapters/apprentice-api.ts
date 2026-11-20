@@ -39,17 +39,27 @@ export class HttpApprenticeApi implements ApprenticeApi {
     ).replace(/\/$/, "");
   }
 
-  private async request<T>(path: string, options?: RequestInit): Promise<T> {
+  /**
+   * A sleeping backend (e.g. a Render free-tier cold start) can hold a request
+   * open for 30 s+. Abort after `timeoutMs` so HybridApprenticeApi can fall
+   * back to the mock API instead of leaving the UI stuck on "Starting…".
+   * Generation endpoints get a longer budget because they call an LLM.
+   */
+  private async request<T>(path: string, options?: RequestInit, timeoutMs = 6000): Promise<T> {
     const url = `${this.baseUrl}${path}`;
     const headers = {
       "Content-Type": "application/json",
       ...(options?.headers || {}),
     };
 
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+
     try {
       const response = await fetch(url, {
         ...options,
         headers,
+        signal: controller.signal,
       });
 
       if (!response.ok) {
@@ -74,7 +84,10 @@ export class HttpApprenticeApi implements ApprenticeApi {
       if ((err as Error).message.startsWith("[ApprenticeApi Error]")) {
         throw err;
       }
-      throw new Error(`Network error communicating with backend: ${(err as Error).message}`);
+      const reason = controller.signal.aborted ? `timed out after ${timeoutMs} ms` : (err as Error).message;
+      throw new Error(`Network error communicating with backend: ${reason}`);
+    } finally {
+      clearTimeout(timer);
     }
   }
 
@@ -114,7 +127,7 @@ export class HttpApprenticeApi implements ApprenticeApi {
     return this.request<WorkMap>("/api/work-maps/generate", {
       method: "POST",
       body: JSON.stringify({ sessionId, workflowName: "Support Ticket Triage" }),
-    });
+    }, 30000);
   }
 
   async getWorkMap(workMapId: string): Promise<WorkMap> {
@@ -127,7 +140,7 @@ export class HttpApprenticeApi implements ApprenticeApi {
     return this.request<DecisionEvaluationResult>("/api/training/decision-attempt", {
       method: "POST",
       body: JSON.stringify(attempt),
-    });
+    }, 30000);
   }
 
   async saveTrainingResult(result: TrainingResult): Promise<TrainingResult> {

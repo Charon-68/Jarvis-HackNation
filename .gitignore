@@ -33,3 +33,5 @@ build/
 
 # Logs
 *.log
+# MotionSites reference templates (licensed for reference; never commit)
+*.zip
