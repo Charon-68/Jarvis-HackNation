@@ -576,6 +576,8 @@ export default function TrainingWorkspace() {
                 agentStatus={agentStatus}
                 messages={state.agentMessages}
                 screenEvents={state.screenEvents}
+                variant="tutor"
+                alert={!!intervention}
               />
             ),
           },

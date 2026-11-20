@@ -1,11 +1,15 @@
 /**
  * P1-04, P1-07, P1-09 — AI Apprentice Side Panel
- * Provider-neutral panel showing agent status, messages, and ScreenEvent activity stream.
- * Does NOT expose raw Claude or provider payloads.
+ * Provider-neutral panel showing agent presence (SignalOrb), messages, and the
+ * ScreenEvent activity stream. Does NOT expose raw Claude or provider payloads.
  */
 
+import { AnimatePresence, motion } from "motion/react";
+import { BookOpenText, CircleHelp, Info, MessageSquare, OctagonAlert } from "lucide-react";
 import type { AgentMessage, ScreenEvent } from "../types/index";
 import ScreenEventTimeline from "./ScreenEventTimeline";
+import SignalOrb, { orbStateFrom, type OrbState } from "./SignalOrb";
+import { flag } from "@/lib/route";
 
 interface ApprenticePanelProps {
   agentStatus: string;
@@ -14,6 +18,10 @@ interface ApprenticePanelProps {
   /** Optional slot for external/embedded voice control */
   elevenLabsSlot?: React.ReactNode;
   onSelectEvent?: (event: ScreenEvent) => void;
+  /** "tutor" in Training; changes the title and copy. */
+  variant?: "apprentice" | "tutor";
+  /** The tutor is blocking a decision: orb and header turn red. */
+  alert?: boolean;
 }
 
 function formatTs(ms: number): string {
@@ -26,91 +34,61 @@ function formatTs(ms: number): string {
   });
 }
 
+const KIND = {
+  question: { icon: CircleHelp, label: "Apprentice question", tone: "signal" },
+  answer: { icon: MessageSquare, label: "AI Apprentice", tone: "neutral" },
+  status: { icon: Info, label: "AI Apprentice", tone: "neutral" },
+  intervention: { icon: OctagonAlert, label: "Tutor intervention", tone: "stop" },
+  teach_back: { icon: BookOpenText, label: "Teach-back", tone: "signal" },
+} as const;
+
+const TONE = {
+  signal: "border-signal/30 bg-signal/[0.07]",
+  neutral: "border-line bg-raised/70",
+  stop: "border-stop/35 bg-stop/10",
+} as const;
+
+const STATE_COPY: Record<OrbState, string> = {
+  offline: "Offline",
+  connecting: "Connecting…",
+  listening: "Listening",
+  speaking: "Speaking",
+  alert: "Flagging a decision",
+  error: "Voice unavailable",
+};
+
 function MessageBubble({ msg }: { msg: AgentMessage }) {
   const isAgent = msg.role === "agent";
-  const kindIcon: Record<string, string> = {
-    question: "❓",
-    answer: "💬",
-    status: "ℹ️",
-    intervention: "🚨",
-    teach_back: "📖",
-  };
+  const kind = KIND[msg.kind as keyof typeof KIND] ?? KIND.answer;
+  const Icon = kind.icon;
 
   return (
-    <div
-      className="fade-in"
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        alignItems: isAgent ? "flex-start" : "flex-end",
-        marginBottom: 10,
-      }}
+    <motion.li
+      layout
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+      className={`flex flex-col ${isAgent ? "items-start" : "items-end"}`}
     >
       <div
-        style={{
-          maxWidth: "92%",
-          padding: "9px 13px",
-          borderRadius: isAgent ? "4px 12px 12px 12px" : "12px 4px 12px 12px",
-          background: isAgent
-            ? msg.kind === "intervention"
-              ? "rgba(239,68,68,0.12)"
-              : msg.kind === "question"
-              ? "var(--brand-primary-dim)"
-              : msg.kind === "teach_back"
-              ? "rgba(200, 246, 90, 0.12)"
-              : "var(--bg-raised)"
-            : "var(--brand-primary)",
-          border: `1px solid ${
-            isAgent
-              ? msg.kind === "intervention"
-                ? "rgba(239,68,68,0.3)"
-                : msg.kind === "question"
-                ? "var(--brand-primary-glow)"
-                : msg.kind === "teach_back"
-                ? "rgba(200, 246, 90, 0.3)"
-                : "var(--border-subtle)"
-              : "transparent"
-          }`,
-          fontSize: 12.5,
-          lineHeight: 1.55,
-          color: isAgent && msg.kind !== "intervention" ? "var(--text-primary)" : undefined,
-        }}
+        className={`max-w-[94%] rounded-xl border px-3 py-2.5 text-[12.5px] leading-relaxed ${
+          isAgent ? `${TONE[kind.tone]} rounded-tl-sm text-fg` : "rounded-tr-sm border-transparent bg-signal text-signal-ink"
+        }`}
       >
         {isAgent && (
           <div
-            style={{
-              fontSize: 10,
-              fontWeight: 700,
-              color:
-                msg.kind === "intervention"
-                  ? "#f87171"
-                  : msg.kind === "question"
-                  ? "var(--brand-primary)"
-                  : "var(--text-muted)",
-              marginBottom: 4,
-              display: "flex",
-              alignItems: "center",
-              gap: 4,
-            }}
+            className={`hud-tag mb-1 flex items-center gap-1.5 ${
+              kind.tone === "stop" ? "text-stop" : kind.tone === "signal" ? "text-signal" : "text-fg-faint"
+            }`}
           >
-            <span>{kindIcon[msg.kind] ?? "💬"}</span>
-            <span>
-              {msg.kind === "intervention"
-                ? "Tutor Intervention"
-                : msg.kind === "question"
-                ? "Apprentice Question"
-                : msg.kind === "teach_back"
-                ? "Teach-Back"
-                : "AI Apprentice"}
-            </span>
+            <Icon className="size-3" aria-hidden />
+            {kind.label}
           </div>
         )}
-        <div>{msg.text}</div>
+        <div className={msg.kind === "intervention" ? "text-[#ffd2cc]" : ""}>{msg.text}</div>
       </div>
-      <span style={{ fontSize: 10, color: "var(--text-muted)", marginTop: 3, marginLeft: 2, marginRight: 2 }}>
-        {formatTs(msg.timestampMs)}
-      </span>
-    </div>
+      <span className="mx-0.5 mt-1 font-mono text-[10px] text-fg-faint">{formatTs(msg.timestampMs)}</span>
+    </motion.li>
   );
 }
 
@@ -120,95 +98,74 @@ export default function ApprenticePanel({
   screenEvents,
   elevenLabsSlot,
   onSelectEvent,
+  variant = "apprentice",
+  alert = false,
 }: ApprenticePanelProps) {
-  const isConnected = agentStatus === "connected" || agentStatus === "speaking" || agentStatus === "listening";
+  // QA switch: ?orb=speaking|listening|alert|… forces a presence state.
+  const forced = flag("orb") as OrbState | null;
+  const orbState: OrbState = forced && forced in STATE_COPY ? forced : orbStateFrom(agentStatus, alert);
+  const live = orbState === "listening" || orbState === "speaking" || orbState === "connecting";
+  const title = variant === "tutor" ? "AI Tutor" : "AI Apprentice";
 
   return (
-    <div className="flex-col" style={{ height: "100%", display: "flex", overflow: "hidden" }}>
-      {/* Header */}
+    <div className="flex h-full flex-col overflow-hidden">
+      {/* Presence */}
       <div
-        className="card-header"
-        style={{
-          padding: "14px 16px",
-          flexShrink: 0,
-          borderBottom: "1px solid var(--border-subtle)",
-        }}
+        className={`relative shrink-0 overflow-hidden border-b px-4 py-4 transition-colors duration-500 ${
+          orbState === "alert" ? "border-stop/30 bg-stop/[0.06]" : "border-line"
+        }`}
       >
-        <div className="flex items-center gap-2" style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <span
-            style={{
-              fontSize: 16,
-              background: "linear-gradient(135deg, #c8f65a, #8fbf2f)",
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-              fontWeight: 700,
-            }}
-          >
-            ✦
-          </span>
-          <span style={{ fontWeight: 700, fontSize: 13 }}>AI Apprentice</span>
-        </div>
-        <div className="flex items-center gap-2" style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <span className={`status-dot ${isConnected ? "connected" : "idle"}`} />
-          <span style={{ fontSize: 11, fontWeight: 600, color: isConnected ? "var(--brand-primary)" : "var(--text-muted)" }}>
-            {agentStatus.toUpperCase()}
-          </span>
+        <div className="flex items-center gap-4">
+          <SignalOrb state={orbState} size={64} />
+          <div className="min-w-0">
+            <div className="text-sm font-medium text-fg">{title}</div>
+            <div
+              aria-live="polite"
+              className={`hud-tag mt-1 flex items-center gap-1.5 ${
+                orbState === "alert" ? "text-stop" : live ? "text-signal" : "text-fg-faint"
+              }`}
+            >
+              {live && <span className="size-1.5 animate-pulse rounded-full bg-current" aria-hidden />}
+              {STATE_COPY[orbState]}
+            </div>
+            <div className="mt-1.5 text-[11.5px] leading-snug text-fg-muted">
+              {variant === "tutor" ? "Coaching from the expert's Work Map" : "Watching the screen, asking why"}
+            </div>
+          </div>
         </div>
       </div>
 
       {/* Embedded ElevenLabs slot if provided */}
-      {elevenLabsSlot && (
-        <div style={{ flexShrink: 0, borderBottom: "1px solid var(--border-subtle)" }}>
-          {elevenLabsSlot}
-        </div>
-      )}
+      {elevenLabsSlot && <div className="shrink-0 border-b border-line">{elevenLabsSlot}</div>}
 
       {/* Messages area */}
       <div
-        className="scroll-y"
-        style={{ flex: 1, padding: "12px 14px" }}
+        className="min-h-0 flex-1 overflow-y-auto px-3.5 py-3"
         ref={(el) => {
           if (el) el.scrollTop = el.scrollHeight;
         }}
       >
         {messages.length === 0 ? (
-          <div
-            style={{
-              textAlign: "center",
-              padding: "36px 16px",
-              color: "var(--text-muted)",
-              fontSize: 12,
-            }}
-          >
-            <div style={{ fontSize: 28, marginBottom: 12 }}>🎧</div>
-            <div style={{ fontWeight: 600, color: "var(--text-primary)", marginBottom: 4 }}>
-              Listening Quietly
-            </div>
-            <div>Observing triage actions and capturing expert reasoning…</div>
+          <div className="px-4 py-10 text-center">
+            <div className="text-[13px] font-medium text-fg">Listening quietly</div>
+            <div className="mt-1 text-xs text-fg-muted">Observing triage actions and capturing expert reasoning…</div>
           </div>
         ) : (
-          messages.map((msg) => <MessageBubble key={msg.id} msg={msg} />)
+          <ul className="flex flex-col gap-2.5">
+            <AnimatePresence initial={false}>
+              {messages.map((msg) => (
+                <MessageBubble key={msg.id} msg={msg} />
+              ))}
+            </AnimatePresence>
+          </ul>
         )}
       </div>
 
       {/* Task P1-09: ScreenEvent Timeline & Activity stream */}
-      <div
-        style={{
-          flexShrink: 0,
-          borderTop: "1px solid var(--border-subtle)",
-          padding: "10px 14px",
-          maxHeight: 190,
-          overflowY: "auto",
-          background: "var(--bg-surface)",
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
-          <h3 style={{ fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, color: "var(--text-muted)", margin: 0 }}>
-            Workflow Activity
-          </h3>
-          <span style={{ fontSize: 10, color: "var(--text-muted)", fontWeight: 600 }}>
-            {screenEvents.length} events
-          </span>
+      <div className="max-h-[190px] shrink-0 overflow-y-auto border-t border-line bg-ink/40 px-3.5 py-2.5">
+        <div className="mb-2 flex items-center justify-between">
+          <h3 className="hud-tag m-0 text-fg-faint">Workflow activity</h3>
+          <span className="font-mono text-[10px] text-fg-faint">{screenEvents.length} events</span>
         </div>
         <ScreenEventTimeline events={screenEvents} maxItems={8} onSelectEvent={onSelectEvent} />
       </div>
