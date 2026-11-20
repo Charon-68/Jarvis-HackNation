@@ -149,7 +149,7 @@ export default function SessionControls({
             className="btn btn-primary"
             onClick={onStartTraining}
           >
-            🎓 Start Training
+            Start training →
           </button>
         )}
       </div>

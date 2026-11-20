@@ -24,6 +24,7 @@ The plan, art direction and roadmap are in `../docs/BLUEPRINT.md`. Missing facts
   - Quality tiers: `high` (bloom, DPR ≤ 2) and `low`. `?quality=` overrides the tier.
   - Software GL throws, and `HeroScene` shows a CSS orb instead. `?webgl=off` forces this.
   - Handles context loss, pauses when the tab is hidden, and `launch()` resolves on a timer rather than rAF.
+- `src/components/shell/`: `TopBar` (stage stepper derived from the session phase) and `Workspace` (panes side by side at ≥ 1024 px, tabs below; hidden panes stay mounted). Phase screens cross-fade via `AnimatePresence` in `App.tsx`.
 - `src/landing/`: `HeroScene` (React wrapper) and `Landing` (the scroll document over a fixed stage; the pinned story maps scroll onto formations).
 
 ## QA switches

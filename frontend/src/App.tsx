@@ -18,6 +18,9 @@ import DebriefScreen from "./screens/DebriefScreen";
 import WorkMapScreen from "./screens/WorkMapScreen";
 import TrainingWorkspace from "./screens/TrainingWorkspace";
 import { flag, navigate, useRoute } from "./lib/route";
+import TopBar from "./components/shell/TopBar";
+import { AnimatePresence, MotionConfig, motion } from "motion/react";
+import { CheckCheck, RotateCcw } from "lucide-react";
 
 const Landing = lazy(() => import("./landing/Landing"));
 
@@ -25,147 +28,80 @@ const Landing = lazy(() => import("./landing/Landing"));
 // Phase router — inner component (needs session context)
 // ---------------------------------------------------------------------------
 
+function screenKey(phase: string, hasSession: boolean) {
+  if (!hasSession || phase === "ready" || phase === "error") return "home";
+  return phase;
+}
+
 function AppRouter() {
   const { state, resetSession, startTraining } = useSession();
   const { phase, session } = state;
+  const key = screenKey(phase, !!session);
 
-  // Decide which screen to show
   let screen: React.ReactNode;
-
-  if (!session || phase === "ready" || phase === "error") {
-    screen = <HomeScreen />;
-  } else if (phase === "capturing") {
-    screen = <CaptureWorkspace />;
-  } else if (phase === "debrief") {
-    screen = <DebriefScreen />;
-  } else if (phase === "map_ready") {
-    screen = <WorkMapScreen />;
-  } else if (phase === "training") {
-    screen = <TrainingWorkspace />;
-  } else if (phase === "completed") {
-    screen = (
-      <div
-        style={{
-          height: "100%",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          flexDirection: "column",
-          gap: 20,
-        }}
-      >
-        <div style={{ fontSize: 56 }}>🎉</div>
-        <h1>Session Complete</h1>
-        <p style={{ color: "var(--text-secondary)" }}>The AI Apprentice has captured and taught the workflow.</p>
-        <button className="btn btn-primary" onClick={resetSession}>
-          Start New Session
-        </button>
-      </div>
-    );
-  } else {
-    screen = <HomeScreen />;
+  switch (key) {
+    case "capturing":
+      screen = <CaptureWorkspace />;
+      break;
+    case "debrief":
+      screen = <DebriefScreen />;
+      break;
+    case "map_ready":
+      screen = <WorkMapScreen />;
+      break;
+    case "training":
+      screen = <TrainingWorkspace />;
+      break;
+    case "completed":
+      screen = <CompletedScreen onRestart={resetSession} />;
+      break;
+    default:
+      screen = <HomeScreen />;
   }
 
   return (
-    <div
-      style={{
-        width: "100vw",
-        height: "100vh",
-        display: "flex",
-        flexDirection: "column",
-        overflow: "hidden",
-        background: "var(--bg-base)",
-      }}
-    >
-      {/* Top bar */}
-      <header
-        style={{
-          height: 52,
-          background: "var(--bg-surface)",
-          borderBottom: "1px solid var(--border-subtle)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          padding: "0 20px",
-          flexShrink: 0,
-          zIndex: 10,
-        }}
-      >
-        {/* Logo */}
-        <div className="flex items-center gap-2">
-          <span
-            style={{
-              fontSize: 18,
-              background: "linear-gradient(135deg, #c8f65a, #7fae2a)",
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-              fontWeight: 800,
-            }}
-          >
-            ✦
-          </span>
-          <span style={{ fontWeight: 700, fontSize: 15 }}>AI Apprentice</span>
-          <span
-            style={{
-              fontSize: 11,
-              color: "var(--text-muted)",
-              background: "var(--bg-raised)",
-              border: "1px solid var(--border-subtle)",
-              borderRadius: "var(--radius-pill)",
-              padding: "2px 8px",
-              marginLeft: 4,
-            }}
-          >
-            Support Ticket Triage
-          </span>
-        </div>
-
-        {/* Right controls */}
-        <div className="flex items-center gap-3">
-          {/* Phase badge */}
-          {session && (
-            <span
-              style={{
-                fontSize: 11,
-                fontWeight: 600,
-                color: "var(--brand-primary)",
-                background: "var(--brand-primary-dim)",
-                border: "1px solid var(--brand-primary-glow)",
-                borderRadius: "var(--radius-pill)",
-                padding: "3px 10px",
-              }}
+    <MotionConfig reducedMotion="user">
+      <div className="flex h-svh w-screen flex-col overflow-hidden bg-ink text-fg">
+        <TopBar
+          phase={phase}
+          hasSession={!!session}
+          participant={session?.mode === "training" ? session?.traineeName : session?.expertName}
+          mode={session?.mode}
+          onSkipToTraining={startTraining}
+          onReset={resetSession}
+        />
+        <main className="relative min-h-0 flex-1 overflow-hidden">
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.div
+              key={key}
+              className="h-full"
+              initial={{ opacity: 0, y: 14, filter: "blur(4px)" }}
+              animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+              exit={{ opacity: 0, y: -10, filter: "blur(4px)" }}
+              transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
             >
-              {phase.replace("_", " ").toUpperCase()}
-            </span>
-          )}
+              {screen}
+            </motion.div>
+          </AnimatePresence>
+        </main>
+      </div>
+    </MotionConfig>
+  );
+}
 
-          {/* Go to Training (shortcut) */}
-          {phase === "map_ready" && (
-            <button
-              className="btn btn-sm btn-secondary"
-              onClick={startTraining}
-            >
-              Skip → Training
-            </button>
-          )}
-
-          {/* Reset */}
-          {session && (
-            <button
-              className="btn btn-sm btn-secondary"
-              onClick={resetSession}
-              title="Reset session"
-            >
-              ↺ Reset
-            </button>
-          )}
-        </div>
-      </header>
-
-      {/* Main content */}
-      <main style={{ flex: 1, overflow: "hidden" }}>
-        {screen}
-      </main>
+function CompletedScreen({ onRestart }: { onRestart: () => void }) {
+  return (
+    <div className="relative flex h-full flex-col items-center justify-center gap-6 overflow-hidden px-6 text-center">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(50%_40%_at_50%_45%,rgba(200,246,90,0.10),transparent)]" />
+      <div className="relative grid size-20 place-items-center rounded-full bg-signal/10 ring-1 ring-signal/40 shadow-[0_0_60px_rgba(200,246,90,0.25)]">
+        <CheckCheck className="size-8 text-signal" aria-hidden />
+      </div>
+      <p className="hud-tag text-signal">Capture · Map · Teach complete</p>
+      <h1 className="font-display text-title font-normal tracking-normal">Session complete</h1>
+      <p className="max-w-md text-fg-muted">The AI Apprentice has captured the expert&apos;s workflow and taught it to a new hire.</p>
+      <button className="btn btn-primary btn-lg mt-2" onClick={onRestart}>
+        <RotateCcw className="size-4" aria-hidden /> Start a new session
+      </button>
     </div>
   );
 }

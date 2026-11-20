@@ -57,7 +57,7 @@ function MessageBubble({ msg }: { msg: AgentMessage }) {
               : msg.kind === "question"
               ? "var(--brand-primary-dim)"
               : msg.kind === "teach_back"
-              ? "rgba(99, 102, 241, 0.12)"
+              ? "rgba(200, 246, 90, 0.12)"
               : "var(--bg-raised)"
             : "var(--brand-primary)",
           border: `1px solid ${
@@ -67,7 +67,7 @@ function MessageBubble({ msg }: { msg: AgentMessage }) {
                 : msg.kind === "question"
                 ? "var(--brand-primary-glow)"
                 : msg.kind === "teach_back"
-                ? "rgba(99, 102, 241, 0.3)"
+                ? "rgba(200, 246, 90, 0.3)"
                 : "var(--border-subtle)"
               : "transparent"
           }`,
@@ -138,7 +138,7 @@ export default function ApprenticePanel({
           <span
             style={{
               fontSize: 16,
-              background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
+              background: "linear-gradient(135deg, #c8f65a, #8fbf2f)",
               WebkitBackgroundClip: "text",
               WebkitTextFillColor: "transparent",
               fontWeight: 700,

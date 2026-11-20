@@ -3,6 +3,8 @@
  * Three-panel layout: Ticket Queue | Active Ticket | AI Apprentice
  * with session controls bottom bar and real ElevenLabs voice integration.
  */
+import Workspace from "../components/shell/Workspace";
+import { FileText, ListTodo, Sparkles } from "lucide-react";
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useSession } from "../store/sessionStore";
 import { listTickets, EXPERT_SEQUENCE } from "../data/ticketRepository";
@@ -397,72 +399,62 @@ export default function CaptureWorkspace() {
         </div>
       )}
 
-      {/* Three-panel workspace */}
-      <div
-        style={{
-          flex: 1,
-          display: "grid",
-          gridTemplateColumns: "220px 1fr 280px",
-          overflow: "hidden",
-        }}
-      >
-        {/* Left: Ticket Queue */}
-        <div
-          className="card"
-          style={{
-            borderRadius: 0,
-            borderTop: "none",
-            borderLeft: "none",
-            borderBottom: "none",
-          }}
-        >
-          <TicketQueue
-            tickets={tickets}
-            activeTicketId={activeTicketId}
-            solvedTicketIds={solvedTicketIds}
-            onSelect={handleTicketSelect}
-            disabled={!canSelect}
-          />
-        </div>
-
-        {/* Center: Active Ticket */}
-        <div
-          className="card"
-          style={{
-            borderRadius: 0,
-            borderTop: "none",
-            borderBottom: "none",
-          }}
-        >
-          <ActiveTicket
-            ticket={activeTicket}
-            onSave={handleSave}
-            evaluationResult={state.evaluationResult}
-            onClearEvaluation={() => dispatchEvaluationResult(null)}
-            disabled={captureStatus !== "active"}
-            mode="expert"
-            isSaving={isSaving}
-            onFieldChange={handleFieldChange}
-          />
-        </div>
-
-        {/* Right: Apprentice Panel */}
-        <div
-          className="card"
-          style={{
-            borderRadius: 0,
-            borderTop: "none",
-            borderRight: "none",
-            borderBottom: "none",
-          }}
-        >
-          <ApprenticePanel
-            agentStatus={agentStatus}
-            messages={state.agentMessages}
-            screenEvents={state.screenEvents}
-          />
-        </div>
-      </div>
+      {/* Three-pane workspace (tabs below 1024px) */}
+      <Workspace
+        initial="ticket"
+        panes={[
+          {
+            id: "queue",
+            label: "Tickets",
+            icon: ListTodo,
+            width: "232px",
+            node: (
+              <TicketQueue
+                tickets={tickets}
+                activeTicketId={activeTicketId}
+                solvedTicketIds={solvedTicketIds}
+                onSelect={handleTicketSelect}
+                disabled={!canSelect}
+              />
+            ),
+          },
+          {
+            id: "ticket",
+            label: "Ticket",
+            icon: FileText,
+            width: "minmax(0,1fr)",
+            node: (
+              <ActiveTicket
+                ticket={activeTicket}
+                onSave={handleSave}
+                evaluationResult={state.evaluationResult}
+                onClearEvaluation={() => dispatchEvaluationResult(null)}
+                disabled={captureStatus !== "active"}
+                mode="expert"
+                isSaving={isSaving}
+                onFieldChange={handleFieldChange}
+              />
+            ),
+          },
+          {
+            id: "apprentice",
+            label: "Apprentice",
+            icon: Sparkles,
+            width: "300px",
+            badge:
+              state.agentMessages.length > 0 ? (
+                <span className="size-1.5 rounded-full bg-signal shadow-[0_0_6px_rgba(200,246,90,0.9)]" aria-hidden />
+              ) : null,
+            node: (
+              <ApprenticePanel
+                agentStatus={agentStatus}
+                messages={state.agentMessages}
+                screenEvents={state.screenEvents}
+              />
+            ),
+          },
+        ]}
+      />
 
       {/* Bottom: Session Controls */}
       <SessionControls

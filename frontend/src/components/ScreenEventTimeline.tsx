@@ -26,7 +26,7 @@ function formatEventTime(timestampMs: number): string {
 function getEventBadgeColor(type: string): { bg: string; border: string; text: string; icon: string } {
   switch (type) {
     case "ticket_opened":
-      return { bg: "rgba(99, 102, 241, 0.12)", border: "rgba(99, 102, 241, 0.3)", text: "#818cf8", icon: "📂" };
+      return { bg: "rgba(200, 246, 90, 0.12)", border: "rgba(200, 246, 90, 0.3)", text: "#c8f65a", icon: "📂" };
     case "priority_changed":
       return { bg: "rgba(245, 158, 11, 0.12)", border: "rgba(245, 158, 11, 0.3)", text: "#fbbf24", icon: "🎯" };
     case "team_changed":

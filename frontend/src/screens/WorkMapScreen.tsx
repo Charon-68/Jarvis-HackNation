@@ -271,7 +271,7 @@ export default function WorkMapScreen() {
                           ? "1.5px solid var(--brand-primary)"
                           : "1px solid var(--border-subtle)",
                         boxShadow: isSelected
-                          ? "0 4px 16px rgba(99,102,241,0.15)"
+                          ? "0 4px 16px rgba(200,246,90,0.15)"
                           : "0 2px 4px rgba(0,0,0,0.2)",
                         cursor: "pointer",
                         transition: "all 0.2s ease",

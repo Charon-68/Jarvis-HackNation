@@ -61,7 +61,7 @@ export default function DebriefScreen() {
         padding: "40px 24px",
         gap: 24,
         overflowY: "auto",
-        background: "radial-gradient(ellipse at 50% 0%, rgba(139,92,246,0.1) 0%, transparent 60%)",
+        background: "radial-gradient(ellipse at 50% 0%, rgba(200,246,90,0.1) 0%, transparent 60%)",
       }}
     >
       {/* Header */}
@@ -94,7 +94,7 @@ export default function DebriefScreen() {
             style={{
               height: "100%",
               width: `${progress}%`,
-              background: "linear-gradient(90deg, #6366f1, #8b5cf6)",
+              background: "linear-gradient(90deg, #8fbf2f, #c8f65a)",
               borderRadius: "var(--radius-pill)",
               transition: "width 0.5s ease",
             }}

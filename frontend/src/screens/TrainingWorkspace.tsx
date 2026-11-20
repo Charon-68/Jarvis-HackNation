@@ -5,6 +5,8 @@
  * Tutor Intervention renders severity, message, reason, expert guardrail, and evidence replay.
  */
 
+import Workspace from "../components/shell/Workspace";
+import { FileText, GraduationCap, Sparkles } from "lucide-react";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useSession } from "../store/sessionStore";
 import { TRAINING_CASE } from "../data/ticketRepository";
@@ -259,12 +261,10 @@ export default function TrainingWorkspace() {
     );
   }
 
-  return (
-    <div style={{ height: "100%", display: "flex", overflow: "hidden" }}>
-      {/* Main workspace area */}
+  const mainPane = (
       <div
         style={{
-          flex: 1,
+          height: "100%",
           overflow: "hidden",
           display: "flex",
           flexDirection: "column",
@@ -273,14 +273,14 @@ export default function TrainingWorkspace() {
         {/* Header */}
         <div
           style={{
-            background: "linear-gradient(135deg, rgba(139,92,246,0.1), rgba(99,102,241,0.08))",
+            background: "linear-gradient(90deg, rgba(200,246,90,0.06), transparent 60%)",
             borderBottom: "1px solid var(--border-subtle)",
             padding: "16px 24px",
             flexShrink: 0,
           }}
         >
           <div className="flex items-center gap-3" style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <span style={{ fontSize: 20 }}>🎓</span>
+            <span className="grid size-9 place-items-center rounded-lg bg-signal/10 ring-1 ring-signal/30"><GraduationCap className="size-4 text-signal" aria-hidden /></span>
             <div>
               <h2 style={{ marginBottom: 2, fontSize: 16 }}>New Hire Training Workspace</h2>
               <p style={{ color: "var(--text-muted)", fontSize: 12, margin: 0 }}>
@@ -557,24 +557,30 @@ export default function TrainingWorkspace() {
         </div>
       </div>
 
-      {/* Right: Apprentice Panel */}
-      <div
-        className="card"
-        style={{
-          width: 300,
-          borderRadius: 0,
-          borderTop: "none",
-          borderRight: "none",
-          borderBottom: "none",
-          flexShrink: 0,
-        }}
-      >
-        <ApprenticePanel
-          agentStatus={agentStatus}
-          messages={state.agentMessages}
-          screenEvents={state.screenEvents}
-        />
-      </div>
+  );
+
+  return (
+    <div style={{ height: "100%", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+      <Workspace
+        initial="case"
+        panes={[
+          { id: "case", label: "Case", icon: FileText, width: "minmax(0,1fr)", node: mainPane },
+          {
+            id: "tutor",
+            label: "Tutor",
+            icon: Sparkles,
+            width: "320px",
+            badge: intervention ? <span className="size-1.5 rounded-full bg-stop" aria-hidden /> : null,
+            node: (
+              <ApprenticePanel
+                agentStatus={agentStatus}
+                messages={state.agentMessages}
+                screenEvents={state.screenEvents}
+              />
+            ),
+          },
+        ]}
+      />
 
       {/* Evidence Modal */}
       <EvidenceReplayModal
@@ -692,7 +698,7 @@ function ResultsScreen({ result, workMap, onFinish }: ResultsProps) {
           style={{
             width: "100%",
             maxWidth: 540,
-            border: "1px solid rgba(99,102,241,0.25)",
+            border: "1px solid rgba(200,246,90,0.25)",
             background: "var(--brand-primary-dim)",
           }}
         >
