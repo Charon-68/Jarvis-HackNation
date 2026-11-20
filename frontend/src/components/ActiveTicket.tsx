@@ -3,9 +3,10 @@
  * Shows ticket details, priority/team/action selectors, and Save button.
  */
 import { AnimatePresence, motion } from "motion/react";
-import { CheckCircle2, ChevronDown, Image as ImageIcon, OctagonAlert, TriangleAlert, Users, Wrench } from "lucide-react";
+import { CheckCircle2, Image as ImageIcon, OctagonAlert, TriangleAlert, Users, Wrench } from "lucide-react";
 import type { Ticket, TicketPriority, TicketTeam, TicketAction, DecisionEvaluationResult } from "../types/index";
 import PriorityBadge from "./ui/PriorityBadge";
+import SelectField from "./ui/SelectField";
 
 interface ActiveTicketProps {
   ticket: Ticket | null;
@@ -29,46 +30,6 @@ const ACTIONS: TicketAction[] = [
 ];
 
 const EASE = [0.16, 1, 0.3, 1] as const;
-
-function Field({
-  id,
-  label,
-  value,
-  options,
-  disabled,
-  onChange,
-}: {
-  id: string;
-  label: string;
-  value: string;
-  options: readonly string[];
-  disabled?: boolean;
-  onChange: (v: string) => void;
-}) {
-  return (
-    <div className="flex flex-col gap-1.5">
-      <label htmlFor={id} className="hud-tag text-fg-faint">
-        {label}
-      </label>
-      <div className="relative">
-        <select
-          id={id}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          disabled={disabled}
-          className="focus-ring w-full cursor-pointer appearance-none rounded-lg border border-line bg-ink/60 py-2.5 pl-3 pr-9 text-[13.5px] font-medium text-fg transition hover:border-line-strong focus:border-signal/60 disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          {options.map((o) => (
-            <option key={o} value={o}>
-              {o}
-            </option>
-          ))}
-        </select>
-        <ChevronDown className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-fg-faint" aria-hidden />
-      </div>
-    </div>
-  );
-}
 
 export default function ActiveTicket({
   ticket,
@@ -147,10 +108,10 @@ export default function ActiveTicket({
           {/* Decision */}
           <p className="hud-tag mb-4 text-fg-faint">Triage decision</p>
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field id="priority-select" label="Priority" value={priority} options={PRIORITIES} disabled={disabled} onChange={change("priority")} />
-            <Field id="team-select" label="Team" value={team} options={TEAMS} disabled={disabled} onChange={change("team")} />
+            <SelectField id="priority-select" label="Priority" value={priority} options={PRIORITIES} disabled={disabled} onChange={change("priority")} />
+            <SelectField id="team-select" label="Team" value={team} options={TEAMS} disabled={disabled} onChange={change("team")} />
             <div className="sm:col-span-2">
-              <Field id="action-select" label="Action" value={action} options={ACTIONS} disabled={disabled} onChange={change("action")} />
+              <SelectField id="action-select" label="Action" value={action} options={ACTIONS} disabled={disabled} onChange={change("action")} />
             </div>
           </div>
 

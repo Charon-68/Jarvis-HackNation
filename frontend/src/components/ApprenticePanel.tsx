@@ -57,9 +57,10 @@ const STATE_COPY: Record<OrbState, string> = {
   error: "Voice unavailable",
 };
 
-function MessageBubble({ msg }: { msg: AgentMessage }) {
+function MessageBubble({ msg, agentName }: { msg: AgentMessage; agentName: string }) {
   const isAgent = msg.role === "agent";
   const kind = KIND[msg.kind as keyof typeof KIND] ?? KIND.answer;
+  const label = kind.label === "AI Apprentice" ? agentName : kind.label;
   const Icon = kind.icon;
 
   return (
@@ -82,7 +83,7 @@ function MessageBubble({ msg }: { msg: AgentMessage }) {
             }`}
           >
             <Icon className="size-3" aria-hidden />
-            {kind.label}
+            {label}
           </div>
         )}
         <div className={msg.kind === "intervention" ? "text-[#ffd2cc]" : ""}>{msg.text}</div>
@@ -154,7 +155,7 @@ export default function ApprenticePanel({
           <ul className="flex flex-col gap-2.5">
             <AnimatePresence initial={false}>
               {messages.map((msg) => (
-                <MessageBubble key={msg.id} msg={msg} />
+                <MessageBubble key={msg.id} msg={msg} agentName={title} />
               ))}
             </AnimatePresence>
           </ul>
