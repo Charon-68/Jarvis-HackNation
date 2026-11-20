@@ -26,6 +26,7 @@ The plan, art direction and roadmap are in `../docs/BLUEPRINT.md`. Missing facts
   - Handles context loss, pauses when the tab is hidden, and `launch()` resolves on a timer rather than rAF.
 - `src/engine/coreShader.ts`: the signal-core shader shared by the landing scene and the console orb.
 - `src/engine/OrbRenderer.ts` + `src/components/SignalOrb.tsx`: the agent's presence in the Apprentice/Tutor panel. States are `offline | connecting | listening | speaking | alert | error`, mapped from the voice adapter status by `orbStateFrom()`; `alert` is the tutor blocking a decision. It pauses when off-screen or in a hidden tab, has a CSS fallback, and its glow is a CSS halo (no bloom).
+- `src/workmap/`: `WorkMapGraph` (React Flow 13, lazy chunk ~87 KB gz). The layout is computed from the WorkMap (wide: steps left→right with rules below; narrow < 768 px: steps top→bottom with rules to the right). `StepDetail` is shared by the inspector and the List view. Fit rules: fit all if zoom ≥ `MIN_READABLE_ZOOM` (0.72), otherwise start at step 1 and pan; narrow screens fit to width.
 - `src/components/shell/`: `TopBar` (stage stepper derived from the session phase) and `Workspace` (panes side by side at ≥ 1024 px, tabs below; hidden panes stay mounted). Phase screens cross-fade via `AnimatePresence` in `App.tsx`.
 - `src/landing/`: `HeroScene` (React wrapper) and `Landing` (the scroll document over a fixed stage; the pinned story maps scroll onto formations).
 
@@ -42,4 +43,5 @@ The plan, art direction and roadmap are in `../docs/BLUEPRINT.md`. Missing facts
 - `lucide-react` 1.x has no brand icons (no `Github`).
 - With Preflight off, lists show markers; `ol, ul { list-style: none }` is in the legacy-layer reset.
 - QA for capture in the browser pane: `getDisplayMedia` is blocked there. To reach the recording states, stub it in the page console with a canvas `captureStream()` (inspection only; never in code).
+- React Flow 13: dark mode is `forceColorMode="dark"` (not `colorMode`), and fitView `padding` must be a string such as `"56px"`; a bare 0.16 is read as pixels.
 - `PriorityBadge` is the single source for priority colours: Emergency is `stop`, Moderate is `amber`, Low is neutral.
