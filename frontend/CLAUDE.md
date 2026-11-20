@@ -9,7 +9,7 @@ The plan, art direction and roadmap are in `../docs/BLUEPRINT.md`. Missing facts
 4. **Motion has a reduced-motion path.** `?motion=reduced` forces it; `MotionConfig reducedMotion="user"` is used on the landing page.
 5. **MotionSites templates** (`facet`, `mossline`, `shipcraft` zips) are **references only**. Re-implement the techniques; never paste their code or hot-link their CDN images or videos. The zips stay out of git.
 6. **One accent, used with discipline.** Lime is for the Apprentice (orb, live and listening states, current stage, starting capture or a session). Console actions such as Save, Generate and Start training are neutral white (`bg-fg text-ink`). Emergency badges are outline-only.
-7. **Former rule 6:** `signal` (#C8F65A) means "the Apprentice is active". `stop` (#FF5D52) is only for guardrails and blocked actions. No new colours outside `@theme` in `src/styles/app.css`.
+7. **Colour roles.** `signal` (#C8F65A) means "the Apprentice is active". `stop` (#FF5D52) is only for guardrails and blocked actions. No new colours outside `@theme` in `src/styles/app.css`.
 
 ## Stack
 - Vite 8, React 19, TS 7, Tailwind v4 (theme and utilities only; **no Preflight** yet), Motion 14, three 0.187, lucide-react.
