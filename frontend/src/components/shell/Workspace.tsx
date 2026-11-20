@@ -4,7 +4,21 @@
  * < 1024px: a segmented tab bar shows one pane at a time. Hidden panes stay
  * mounted (CSS only), so live state such as the voice panel is preserved.
  */
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
+import { rovingKeyDown } from "@/lib/a11y";
+
+const LG = "(min-width: 1024px)";
+function useWide() {
+  return useSyncExternalStore(
+    (cb) => {
+      const m = window.matchMedia(LG);
+      m.addEventListener("change", cb);
+      return () => m.removeEventListener("change", cb);
+    },
+    () => window.matchMedia(LG).matches,
+    () => true,
+  );
+}
 import type { LucideIcon } from "lucide-react";
 
 export interface Pane {
@@ -29,6 +43,7 @@ export default function Workspace({
   follow?: { pane: string; key: unknown };
 }) {
   const [active, setActive] = useState(initial ?? panes[0]?.id);
+  const wide = useWide();
   const lastKey = useRef(follow?.key);
   useEffect(() => {
     if (!follow || follow.key === lastKey.current) return;
@@ -39,7 +54,12 @@ export default function Workspace({
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       {/* Mobile / tablet tab bar */}
-      <div role="tablist" aria-label="Workspace panes" className="flex shrink-0 gap-1 border-b border-line bg-surface/60 p-1.5 lg:hidden">
+      <div
+        role="tablist"
+        aria-label="Workspace panes"
+        className="flex shrink-0 gap-1 border-b border-line bg-surface/60 p-1.5 lg:hidden"
+        onKeyDown={(e) => rovingKeyDown(e, panes.map((p) => p.id), active, setActive)}
+      >
         {panes.map((p) => {
           const Icon = p.icon;
           const selected = p.id === active;
@@ -49,6 +69,8 @@ export default function Workspace({
               role="tab"
               aria-selected={selected}
               aria-controls={`pane-${p.id}`}
+              id={`tab-${p.id}`}
+              tabIndex={selected ? 0 : -1}
               onClick={() => setActive(p.id)}
               className={`focus-ring relative flex flex-1 items-center justify-center gap-1.5 rounded-md px-2 py-2 text-xs font-medium transition ${
                 selected ? "bg-raised text-fg ring-1 ring-line-strong" : "text-fg-muted hover:text-fg"
@@ -70,8 +92,9 @@ export default function Workspace({
           <section
             key={p.id}
             id={`pane-${p.id}`}
-            role="tabpanel"
+            role={wide ? "region" : "tabpanel"}
             aria-label={p.label}
+            aria-labelledby={wide ? undefined : `tab-${p.id}`}
             className={`min-h-0 min-w-0 overflow-hidden bg-surface/40 ${i < panes.length - 1 ? "lg:border-r lg:border-line" : ""} ${
               p.id === active ? "" : "max-lg:hidden"
             }`}

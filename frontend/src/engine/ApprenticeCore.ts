@@ -182,6 +182,7 @@ export class ApprenticeCore {
     const dbg = gl.getExtension("WEBGL_debug_renderer_info");
     const gpu = dbg ? String(gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL)) : "";
     if (/swiftshader|llvmpipe|software/i.test(gpu)) {
+      this.renderer.forceContextLoss();
       this.renderer.dispose();
       throw new Error(`Software WebGL (${gpu}); using fallback`);
     }
@@ -244,6 +245,9 @@ export class ApprenticeCore {
     const rand = seeded(7);
     const glass = this.glassMaterial();
     this.guardMat = this.glassMaterial();
+    // Darker red body so guardrail nodes read as "stop", not salmon, under bloom.
+    this.guardMat.color = new THREE.Color(0x2a0d0b);
+    this.guardMat.iridescence = 0.25;
     this.guardMat.emissive = TUNING.stop.clone();
     this.guardMat.emissiveIntensity = 0;
     for (let i = 0; i < TUNING.shardCount; i++) {
@@ -281,7 +285,8 @@ export class ApprenticeCore {
     for (let i = 0; i < moteCount; i++) {
       const d = new THREE.Vector3(rand() - 0.5, rand() - 0.5, rand() - 0.5).normalize().multiplyScalar(4 + rand() * 7);
       m4.makeRotationFromEuler(new THREE.Euler(rand() * 6, rand() * 6, 0));
-      m4.setPosition(d.x * 1.4, d.y * 0.8, d.z - 2);
+      // Keep motes behind z = 2.5 so none sit near the camera (bloom turns them into glare).
+      m4.setPosition(d.x * 1.4, d.y * 0.8, Math.min(d.z - 2, 2.5));
       this.motes.setMatrixAt(i, m4);
     }
     this.scene.add(this.motes);
@@ -342,6 +347,8 @@ export class ApprenticeCore {
     this.scene.environment?.dispose();
     this.composer?.dispose();
     this.renderer.dispose();
+    // Release the GL context now; browsers cap live contexts (~16).
+    this.renderer.forceContextLoss();
     this.renderer.domElement.remove();
   }
 
@@ -350,11 +357,13 @@ export class ApprenticeCore {
   private glassMaterial() {
     const mat = new THREE.MeshPhysicalMaterial({
       color: 0x16171b,
-      roughness: 0.32,
+      // Slightly rough clearcoat: mirror-sharp reflections of the RoomEnvironment's
+      // light panels became HDR hot spots that bloom turned into glare.
+      roughness: 0.34,
       metalness: 0,
-      clearcoat: 0.8,
-      clearcoatRoughness: 0.1,
-      specularIntensity: 0.8,
+      clearcoat: 0.6,
+      clearcoatRoughness: 0.22,
+      specularIntensity: 0.6,
       iridescence: 0.6,
       iridescenceIOR: 1.3,
       iridescenceThicknessMinimum: 240,

@@ -73,7 +73,7 @@ function MessageBubble({ msg, agentName }: { msg: AgentMessage; agentName: strin
     >
       <div
         className={`max-w-[94%] rounded-xl border px-3 py-2.5 text-[12.5px] leading-relaxed ${
-          isAgent ? `${TONE[kind.tone]} rounded-tl-sm text-fg` : "rounded-tr-sm border-transparent bg-signal text-signal-ink"
+          isAgent ? `${TONE[kind.tone]} rounded-tl-sm text-fg` : "rounded-tr-sm border-transparent bg-fg text-ink"
         }`}
       >
         {isAgent && (
@@ -121,7 +121,6 @@ export default function ApprenticePanel({
           <div className="min-w-0">
             <div className="text-sm font-medium text-fg">{title}</div>
             <div
-              aria-live="polite"
               className={`hud-tag mt-1 flex items-center gap-1.5 ${
                 orbState === "alert" ? "text-stop" : live ? "text-signal" : "text-fg-faint"
               }`}
@@ -135,6 +134,11 @@ export default function ApprenticePanel({
           </div>
         </div>
       </div>
+
+      {/* Announce only state changes that need attention, not listening/speaking flips */}
+      <span className="sr-only" aria-live="assertive">
+        {orbState === "alert" ? `${title} is flagging a decision.` : orbState === "error" ? "Voice is unavailable." : ""}
+      </span>
 
       {/* Embedded ElevenLabs slot if provided */}
       {elevenLabsSlot && <div className="shrink-0 border-b border-line">{elevenLabsSlot}</div>}

@@ -78,7 +78,7 @@ export default function ActiveTicket({
       {/* Ticket header */}
       <div className="flex shrink-0 items-center justify-between gap-3 border-b border-line px-5 py-3.5">
         <div className="flex min-w-0 items-center gap-3">
-          <span className="shrink-0 rounded-md bg-signal/10 px-2 py-1 font-mono text-[13px] font-medium text-signal ring-1 ring-signal/25">
+          <span className="shrink-0 rounded-md bg-raised px-2 py-1 font-mono text-[13px] font-medium text-fg ring-1 ring-line-strong">
             {ticket.id}
           </span>
           <div className="min-w-0">
@@ -122,7 +122,7 @@ export default function ActiveTicket({
             className={`focus-ring mt-6 flex w-full items-center justify-center gap-2 rounded-xl px-5 py-3 text-[15px] font-medium transition disabled:cursor-not-allowed ${
               saved
                 ? "bg-verified/15 text-verified ring-1 ring-verified/40"
-                : "bg-signal text-signal-ink shadow-[0_0_28px_rgba(200,246,90,0.18)] hover:bg-[#d6ff78] disabled:opacity-40 disabled:shadow-none"
+                : "bg-fg text-ink hover:bg-white disabled:opacity-40 disabled:shadow-none"
             }`}
           >
             {isSaving ? (

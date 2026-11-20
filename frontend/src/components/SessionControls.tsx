@@ -53,16 +53,16 @@ export default function SessionControls({
   return (
     <div className="flex h-16 shrink-0 items-center justify-between gap-3 border-t border-line bg-ink/80 px-3 backdrop-blur-xl sm:px-5">
       {/* Left: status */}
-      <div className="flex min-w-0 items-center gap-2.5 sm:min-w-[170px]" aria-live="polite">
+      <div className="flex min-w-0 items-center gap-2.5 sm:min-w-[170px]">
         <span className="relative flex size-2.5">
-          {isCapturing && <span className="absolute inset-0 animate-ping rounded-full bg-stop/70" aria-hidden />}
-          <span className={`relative size-2.5 rounded-full ${isCapturing ? "bg-stop" : isPaused ? "bg-amber" : "bg-fg-faint"}`} />
+          {isCapturing && <span className="absolute inset-0 animate-ping rounded-full bg-signal/70" aria-hidden />}
+          <span className={`relative size-2.5 rounded-full ${isCapturing ? "bg-signal" : isPaused ? "bg-amber" : "bg-fg-faint"}`} />
         </span>
-        <span className={`hud-tag ${isCapturing ? "text-fg" : "text-fg-muted"}`}>{STATUS_LABEL[captureStatus] ?? captureStatus}</span>
+        <span aria-live="polite" className={`hud-tag ${isCapturing ? "text-fg" : "text-fg-muted"}`}>{STATUS_LABEL[captureStatus] ?? captureStatus}</span>
         {(isCapturing || isPaused) && (
           <span
             className={`rounded-md px-2 py-0.5 font-mono text-[13px] font-medium tabular-nums ${
-              isCapturing ? "bg-stop/10 text-stop" : "bg-amber/10 text-amber"
+              isCapturing ? "bg-raised text-fg ring-1 ring-line" : "bg-amber/10 text-amber"
             }`}
           >
             {formatElapsed(elapsed)}
@@ -97,7 +97,7 @@ export default function SessionControls({
         )}
 
         {captureStatus === "stopped" && phase === "capturing" && (
-          <button id="end-expert-task-btn" className={`${btn} bg-signal text-signal-ink hover:bg-[#d6ff78]`} onClick={onEndExpertTask} disabled={loading}>
+          <button id="end-expert-task-btn" className={`${btn} bg-fg text-ink hover:bg-white`} onClick={onEndExpertTask} disabled={loading}>
             {loading ? (
               <>
                 <span className="size-3.5 animate-spin rounded-full border-2 border-signal-ink/30 border-t-signal-ink" /> Working…
@@ -111,7 +111,7 @@ export default function SessionControls({
         )}
 
         {phase === "map_ready" && (
-          <button id="start-training-btn" className={`${btn} bg-signal text-signal-ink hover:bg-[#d6ff78]`} onClick={onStartTraining}>
+          <button id="start-training-btn" className={`${btn} bg-fg text-ink hover:bg-white`} onClick={onStartTraining}>
             Start training <ArrowRight className="size-4" aria-hidden />
           </button>
         )}

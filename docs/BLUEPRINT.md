@@ -1,6 +1,6 @@
 # AI Apprentice: UI Refactor Blueprint
 
-Status: **Direction A approved, with 3D added.** M0 and M1 and the landing page (M7, brought forward) are done. See §11.
+Status: **M0–M8 done on `ui-refactoring`** (deploy pending approval). See §11 and `docs/QA.md`.
 Date: 2026-11-21 · Branch: `ui-refactoring`
 
 ---

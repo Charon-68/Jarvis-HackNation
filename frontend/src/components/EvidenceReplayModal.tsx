@@ -7,6 +7,7 @@ import { useEffect, useRef } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { ImageOff, X } from "lucide-react";
 import type { WorkMapStep } from "../types/index";
+import { trapTab } from "../lib/a11y";
 import { evidenceStore } from "../store/evidenceStore";
 
 interface EvidenceReplayModalProps {
@@ -16,15 +17,18 @@ interface EvidenceReplayModalProps {
 
 export default function EvidenceReplayModal({ step, onClose }: EvidenceReplayModalProps) {
   const closeBtn = useRef<HTMLButtonElement>(null);
+  const dialog = useRef<HTMLDivElement>(null);
   const opener = useRef<Element | null>(null);
 
   useEffect(() => {
+    if (!step) return;
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
+      else trapTab(e, dialog.current);
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [onClose]);
+  }, [step, onClose]);
 
   // Move focus into the dialog, and back to the trigger when it closes.
   useEffect(() => {
@@ -52,6 +56,7 @@ export default function EvidenceReplayModal({ step, onClose }: EvidenceReplayMod
           onClick={onClose}
         >
           <motion.div
+            ref={dialog}
             role="dialog"
             aria-modal="true"
             aria-labelledby="evidence-title"

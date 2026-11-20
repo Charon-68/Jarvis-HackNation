@@ -1,4 +1,5 @@
 import { copyFileSync, mkdirSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { defineConfig, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
@@ -29,7 +30,7 @@ export default defineConfig({
   plugins: [react(), tailwindcss(), spaRouteCopies(["app"])],
   resolve: {
     alias: {
-      "@": new URL("./src", import.meta.url).pathname,
+      "@": fileURLToPath(new URL("./src", import.meta.url)),
     },
   },
   server: {

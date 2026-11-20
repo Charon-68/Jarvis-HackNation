@@ -3,7 +3,8 @@
  * only red in the system), Moderate uses amber, Low stays neutral.
  */
 const STYLE: Record<string, { dot: string; text: string; ring: string }> = {
-  Emergency: { dot: "bg-stop", text: "text-stop", ring: "ring-stop/35 bg-stop/10" },
+  // Outline only: solid red is reserved for guardrails and blocked saves.
+  Emergency: { dot: "bg-stop", text: "text-fg", ring: "ring-stop/45 bg-transparent" },
   Moderate: { dot: "bg-amber", text: "text-amber", ring: "ring-amber/30 bg-amber/10" },
   "Low Priority": { dot: "bg-fg-faint", text: "text-fg-muted", ring: "ring-line-strong bg-raised" },
 };

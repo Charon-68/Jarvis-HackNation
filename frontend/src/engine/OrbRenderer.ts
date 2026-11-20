@@ -35,12 +35,18 @@ export class OrbRenderer {
   private io: IntersectionObserver;
   private ro: ResizeObserver;
 
-  constructor(private host: HTMLElement, private reducedMotion = false) {
+  constructor(
+    private host: HTMLElement,
+    private reducedMotion = false,
+    /** Called if the GL context is lost; the wrapper shows the CSS orb instead. */
+    private onContextLost?: () => void,
+  ) {
     this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "low-power" });
     const gl = this.renderer.getContext();
     const dbg = gl.getExtension("WEBGL_debug_renderer_info");
     const gpu = dbg ? String(gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL)) : "";
     if (/swiftshader|llvmpipe|software/i.test(gpu)) {
+      this.renderer.forceContextLoss();
       this.renderer.dispose();
       throw new Error("Software WebGL; using CSS orb");
     }
@@ -90,12 +96,14 @@ export class OrbRenderer {
     this.mesh.geometry.dispose();
     (this.mesh.material as THREE.Material).dispose();
     this.renderer.dispose();
+    this.renderer.forceContextLoss();
     this.renderer.domElement.remove();
   }
 
   private onLost = (e: Event) => {
     e.preventDefault();
     this.stop();
+    this.onContextLost?.();
   };
 
   private onVisibility = () => {

@@ -48,7 +48,12 @@ export default function SignalOrb({ state, size = 72, className = "" }: { state:
     import("@/engine/OrbRenderer")
       .then(({ OrbRenderer }) => {
         if (cancelled || !host.current) return;
-        orb.current = new OrbRenderer(host.current, prefersReducedMotion());
+        orb.current = new OrbRenderer(host.current, prefersReducedMotion(), () => {
+          // Context lost (e.g. GPU reset or too many contexts): show the CSS orb.
+          orb.current?.dispose();
+          orb.current = null;
+          setWebgl(false);
+        });
         orb.current.setState(stateRef.current);
         setWebgl(true);
       })

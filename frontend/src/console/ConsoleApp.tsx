@@ -7,7 +7,7 @@
  * The original ElevenLabs prototype is preserved as "LegacyPrototype" and
  * accessible via the toggle in the top-right corner.
  */
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ConversationProvider, useConversation } from "@elevenlabs/react";
 import events from "../../screen_events.json";
 
@@ -17,7 +17,7 @@ import CaptureWorkspace from "../screens/CaptureWorkspace";
 import DebriefScreen from "../screens/DebriefScreen";
 import WorkMapScreen from "../screens/WorkMapScreen";
 import TrainingWorkspace from "../screens/TrainingWorkspace";
-import { flag } from "../lib/route";
+import { flag, prefersReducedMotion } from "../lib/route";
 import TopBar from "../components/shell/TopBar";
 import { AnimatePresence, MotionConfig, motion } from "motion/react";
 import { CheckCheck, RotateCcw } from "lucide-react";
@@ -36,6 +36,23 @@ function AppRouter() {
   const { state, resetSession, startTraining } = useSession();
   const { phase, session } = state;
   const key = screenKey(phase, !!session);
+
+  // When the phase screen changes, move focus to the new screen so keyboard and
+  // screen-reader users aren't left on <body> after the cross-fade.
+  const mainRef = useRef<HTMLElement>(null);
+  const firstKey = useRef(key);
+  useEffect(() => {
+    if (key === firstKey.current) return;
+    firstKey.current = "";
+    const t = setTimeout(() => {
+      const h = mainRef.current?.querySelector<HTMLElement>("h1, h2");
+      if (h) {
+        h.tabIndex = -1;
+        h.focus({ preventScroll: true });
+      } else mainRef.current?.focus({ preventScroll: true });
+    }, 380);
+    return () => clearTimeout(t);
+  }, [key]);
 
   let screen: React.ReactNode;
   switch (key) {
@@ -59,7 +76,7 @@ function AppRouter() {
   }
 
   return (
-    <MotionConfig reducedMotion="user">
+    <MotionConfig reducedMotion={prefersReducedMotion() ? "always" : "user"}>
       <div className="flex h-svh w-screen flex-col overflow-hidden bg-ink text-fg">
         <TopBar
           phase={phase}
@@ -69,7 +86,7 @@ function AppRouter() {
           onSkipToTraining={startTraining}
           onReset={resetSession}
         />
-        <main className="relative min-h-0 flex-1 overflow-hidden">
+        <main ref={mainRef} tabIndex={-1} aria-label="Console" className="relative min-h-0 flex-1 overflow-hidden outline-none">
           <AnimatePresence mode="wait" initial={false}>
             <motion.div
               key={key}
@@ -98,7 +115,7 @@ function CompletedScreen({ onRestart }: { onRestart: () => void }) {
       <p className="hud-tag text-signal">Capture · Map · Teach complete</p>
       <h1 className="font-display text-title font-normal tracking-normal">Session complete</h1>
       <p className="max-w-md text-fg-muted">The AI Apprentice has captured the expert&apos;s workflow and taught it to a new hire.</p>
-      <button className="btn btn-primary btn-lg mt-2" onClick={onRestart}>
+      <button className="focus-ring mt-2 flex items-center gap-2 rounded-xl bg-fg px-5 py-3 text-[15px] font-medium text-ink transition hover:bg-white" onClick={onRestart}>
         <RotateCcw className="size-4" aria-hidden /> Start a new session
       </button>
     </div>

@@ -29,7 +29,7 @@ const TYPE: Record<string, { icon: LucideIcon; tone: string }> = {
   ticket_opened: { icon: FolderOpen, tone: "text-signal" },
   priority_changed: { icon: Gauge, tone: "text-amber" },
   team_changed: { icon: Users, tone: "text-fg-muted" },
-  action_changed: { icon: Zap, tone: "text-stop" },
+  action_changed: { icon: Zap, tone: "text-fg" },
   decision_saved: { icon: Save, tone: "text-verified" },
 };
 const FALLBACK = { icon: Radio, tone: "text-fg-faint" };

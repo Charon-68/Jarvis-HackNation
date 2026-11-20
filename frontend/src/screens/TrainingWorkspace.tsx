@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { AnimatePresence, motion, useAnimate, useReducedMotion } from "motion/react";
 import SelectField from "../components/ui/SelectField";
+import { prefersReducedMotion } from "../lib/route";
 import PriorityBadge from "../components/ui/PriorityBadge";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useSession } from "../store/sessionStore";
@@ -76,11 +77,26 @@ export default function TrainingWorkspace() {
   /** Increments on every blocked save; re-triggers the workspace "flinch". */
   const [blockCount, setBlockCount] = useState(0);
   const [flinchScope, animateFlinch] = useAnimate<HTMLDivElement>();
-  const reduceMotion = useReducedMotion();
+  const reduceMotion = useReducedMotion() || prefersReducedMotion();
+  const interventionRef = useRef<HTMLElement>(null);
   useEffect(() => {
-    if (blockCount === 0 || reduceMotion || !flinchScope.current) return;
-    animateFlinch(flinchScope.current, { x: [0, -10, 9, -6, 4, -2, 0] }, { duration: 0.5, ease: "easeOut" });
+    if (blockCount === 0) return;
+    if (!reduceMotion && flinchScope.current) {
+      animateFlinch(flinchScope.current, { x: [0, -8, 7, -4, 2, 0] }, { duration: 0.45, ease: "easeOut" });
+    }
+    // Bring the tutor's explanation into view: the "why" must not sit below the fold.
+    const t = setTimeout(
+      () => interventionRef.current?.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "nearest" }),
+      420,
+    );
+    return () => clearTimeout(t);
   }, [blockCount, reduceMotion, animateFlinch, flinchScope]);
+
+  const fixDecision = () => {
+    setIntervention(null);
+    // The Fix button is removed with the card; put focus on the first field.
+    requestAnimationFrame(() => document.getElementById("train-priority")?.focus());
+  };
   const [savedOk, setSavedOk] = useState(false);
   const [trainingResult, setTrainingResult] = useState<TrainingResult | null>(null);
   const [evidenceStep, setEvidenceStep] = useState<WorkMapStep | null>(null);
@@ -268,6 +284,7 @@ export default function TrainingWorkspace() {
   if (trainingResult) {
     return (
       <ResultsScreen
+        wasBlocked={blockCount > 0}
         result={trainingResult}
         workMap={workMap}
         onFinish={completeSession}
@@ -341,7 +358,7 @@ export default function TrainingWorkspace() {
 
           {/* Decision */}
           <section
-            className={`rounded-2xl border p-5 transition-colors duration-500 ${blocked ? "border-stop/40 bg-stop/[0.04]" : "border-line bg-surface/60"}`}
+            className={`rounded-2xl border p-5 transition-colors duration-500 ${blocked ? "border-stop/35 bg-surface/60" : "border-line bg-surface/60"}`}
             aria-labelledby="decision-title"
           >
             <h3 id="decision-title" className="hud-tag m-0 mb-4 text-fg-faint">
@@ -402,8 +419,8 @@ export default function TrainingWorkspace() {
                 savedOk
                   ? "bg-verified/15 text-verified ring-1 ring-verified/40"
                   : blocked
-                    ? "bg-stop/15 text-stop ring-1 ring-stop/45 hover:bg-stop/20"
-                    : "bg-signal text-signal-ink shadow-[0_0_28px_rgba(200,246,90,0.18)] hover:bg-[#d6ff78]"
+                    ? "bg-[#2a1210] text-[#ffd9d6] ring-1 ring-stop/50 hover:bg-[#331512]"
+                    : "bg-fg text-ink hover:bg-white"
               }`}
             >
               {isSaving ? (
@@ -428,6 +445,7 @@ export default function TrainingWorkspace() {
           <AnimatePresence>
             {intervention && (
               <motion.section
+                ref={interventionRef}
                 key={intervention.message}
                 role="alert"
                 initial={{ opacity: 0, y: 14, scale: 0.98 }}
@@ -463,7 +481,7 @@ export default function TrainingWorkspace() {
 
                 <div className="mt-5 flex flex-wrap gap-2 border-t border-line bg-ink/40 px-5 py-3.5">
                   <button
-                    onClick={() => setIntervention(null)}
+                    onClick={fixDecision}
                     className="focus-ring flex items-center gap-1.5 rounded-lg bg-fg px-3.5 py-2 text-[13px] font-medium text-ink transition hover:bg-white"
                   >
                     <PencilLine className="size-4" aria-hidden /> Fix decision
@@ -525,8 +543,8 @@ export default function TrainingWorkspace() {
             transition={{ duration: 0.9, times: [0, 0.25, 1] }}
             style={{
               boxShadow: critical
-                ? "inset 0 0 0 2px rgba(255,93,82,0.7), inset 0 0 120px rgba(255,93,82,0.22)"
-                : "inset 0 0 0 2px rgba(245,181,68,0.6), inset 0 0 120px rgba(245,181,68,0.18)",
+                ? "inset 0 0 0 1.5px rgba(255,93,82,0.65), inset 0 0 70px rgba(255,93,82,0.10)"
+                : "inset 0 0 0 1.5px rgba(245,181,68,0.55), inset 0 0 70px rgba(245,181,68,0.08)",
             }}
           />
         )}
@@ -543,19 +561,20 @@ export default function TrainingWorkspace() {
 // ---------------------------------------------------------------------------
 
 interface ResultsProps {
+  /** UI-observed: the tutor blocked at least one save in this session. */
+  wasBlocked: boolean;
   result: TrainingResult;
   workMap: import("../types/index").WorkMap | null;
   onFinish: () => void;
 }
 
-function ResultsScreen({ result, workMap, onFinish }: ResultsProps) {
-  const firstCorrect = !result.initialDecisionWrong;
-  const title = firstCorrect ? "Training complete" : result.correctionOccurred ? "Well done, corrected" : "Training session ended";
+function ResultsScreen({ wasBlocked, result, workMap, onFinish }: ResultsProps) {
+  // The stored flags only check priority/action; trust what the UI saw as well.
+  const firstCorrect = !result.initialDecisionWrong && !wasBlocked;
+  const title = firstCorrect ? "Training complete" : "Guardrail held. Decision corrected.";
   const body = firstCorrect
     ? "You applied the expert's knowledge correctly on your first attempt."
-    : result.correctionOccurred
-      ? "You corrected your triage decision after the tutor applied the expert's data-loss guardrail."
-      : "Training session recorded.";
+    : "The tutor stopped an unsafe save, explained the expert's rule, and you corrected the decision.";
 
   const timeline = [
     !firstCorrect && {
@@ -564,7 +583,7 @@ function ResultsScreen({ result, workMap, onFinish }: ResultsProps) {
       label: "First attempt blocked",
       detail: `${result.initialDecision.priority} · ${result.initialDecision.team} · ${result.initialDecision.action}`,
     },
-    result.interventionOccurred && {
+    (result.interventionOccurred || wasBlocked) && {
       icon: Sparkles,
       tone: "text-signal bg-signal/10 ring-signal/30",
       label: "Tutor explained the expert rule",
@@ -629,7 +648,7 @@ function ResultsScreen({ result, workMap, onFinish }: ResultsProps) {
 
         <button
           onClick={onFinish}
-          className="focus-ring flex items-center gap-2 rounded-xl bg-signal px-6 py-3 text-[15px] font-medium text-signal-ink shadow-[0_0_32px_rgba(200,246,90,0.25)] transition hover:bg-[#d6ff78]"
+          className="focus-ring flex items-center gap-2 rounded-xl bg-fg px-6 py-3 text-[15px] font-medium text-ink transition hover:bg-white"
         >
           Finish training session <ArrowRight className="size-4" aria-hidden />
         </button>

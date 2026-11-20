@@ -108,7 +108,7 @@ export default function DebriefScreen() {
                 <li
                   key={q}
                   className={`flex gap-3 rounded-xl px-3 py-3 transition-all duration-500 ${isCurrent ? "bg-signal/[0.06] ring-1 ring-signal/25" : ""} ${
-                    isAsked ? "opacity-100" : "opacity-35"
+                    isAsked ? "opacity-100" : "opacity-60"
                   }`}
                 >
                   <span
@@ -144,16 +144,27 @@ export default function DebriefScreen() {
                 aria-labelledby="teachback-title"
               >
                 <h2 id="teachback-title" className="hud-tag m-0 text-signal">
-                  Teach-back · the Apprentice explains it back
+                  Teach-back
                 </h2>
                 <blockquote className="mt-4 border-l-2 border-signal/70 pl-4 font-display text-[21px] leading-[1.3] text-fg">
-                  &ldquo;{TEACH_BACK}&rdquo;
+                  &ldquo;
+                  {TEACH_BACK.split(/(P1)/).map((part, i) =>
+                    part === "P1" ? (
+                      // Instrument Serif's "1" reads as "l"; priority codes stay in mono.
+                      <span key={i} className="font-mono text-[0.8em] text-fg">
+                        P1
+                      </span>
+                    ) : (
+                      part
+                    ),
+                  )}
+                  &rdquo;
                 </blockquote>
                 <p className="mt-4 text-[13px] text-fg-muted">Does this accurately represent your triage decisions?</p>
                 <div className="mt-4 flex flex-wrap gap-2">
                   <button
                     onClick={() => setTeachBackComplete(true)}
-                    className="focus-ring flex items-center gap-1.5 rounded-lg bg-signal px-4 py-2 text-[13px] font-medium text-signal-ink transition hover:bg-[#d6ff78]"
+                    className="focus-ring flex items-center gap-1.5 rounded-lg bg-fg px-4 py-2 text-[13px] font-medium text-ink transition hover:bg-white"
                   >
                     <Check className="size-4" aria-hidden /> Confirmed, correct
                   </button>
@@ -183,7 +194,7 @@ export default function DebriefScreen() {
                   id="generate-work-map-btn"
                   onClick={handleGenerateMap}
                   disabled={busy}
-                  className="focus-ring flex items-center justify-center gap-2 self-start rounded-xl bg-signal px-5 py-3 text-[15px] font-medium text-signal-ink shadow-[0_0_28px_rgba(200,246,90,0.22)] transition hover:bg-[#d6ff78] disabled:cursor-wait disabled:opacity-70"
+                  className="focus-ring flex items-center justify-center gap-2 self-start rounded-xl bg-fg px-5 py-3 text-[15px] font-medium text-ink transition hover:bg-white disabled:cursor-wait disabled:opacity-70"
                 >
                   {busy ? (
                     <>

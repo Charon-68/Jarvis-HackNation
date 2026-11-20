@@ -7,6 +7,8 @@ import { useState } from "react";
 import { motion } from "motion/react";
 import { ArrowRight, GraduationCap, Mic, ShieldAlert } from "lucide-react";
 import { useSession } from "../store/sessionStore";
+import { rovingKeyDown } from "../lib/a11y";
+import SignalOrb from "../components/SignalOrb";
 
 const MODES = {
   expert: {
@@ -58,6 +60,7 @@ export default function HomeScreen() {
       <div className="relative mx-auto grid min-h-full max-w-6xl items-center gap-10 px-4 py-10 sm:px-6 lg:grid-cols-[1fr_minmax(0,460px)] lg:gap-16">
         {/* Copy */}
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, ease: EASE }}>
+          <SignalOrb state="listening" size={84} className="mb-6" />
           <p className="hud-tag mb-5 text-fg-muted">
             <span className="text-signal">●</span> Console · Support ticket triage
           </p>
@@ -89,7 +92,12 @@ export default function HomeScreen() {
           transition={{ duration: 0.8, delay: 0.08, ease: EASE }}
           className="glass relative rounded-2xl p-5 shadow-[0_30px_80px_-30px_rgba(0,0,0,0.8)] sm:p-6"
         >
-          <div role="radiogroup" aria-label="Session mode" className="grid grid-cols-2 gap-2">
+          <div
+            role="radiogroup"
+            aria-label="Session mode"
+            className="grid grid-cols-2 gap-2"
+            onKeyDown={(e) => rovingKeyDown(e, ["expert", "training"] as const, mode, setMode)}
+          >
             {(["expert", "training"] as const).map((k) => {
               const Icon = MODES[k].icon;
               const selected = k === mode;
@@ -98,6 +106,7 @@ export default function HomeScreen() {
                   key={k}
                   role="radio"
                   aria-checked={selected}
+                  tabIndex={selected ? 0 : -1}
                   aria-label={`${MODES[k].title} (${MODES[k].tag})`}
                   onClick={() => setMode(k)}
                   className={`focus-ring relative flex flex-col items-start gap-3 rounded-xl border p-3.5 text-left transition ${

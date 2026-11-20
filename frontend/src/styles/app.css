@@ -49,6 +49,13 @@
   --text-title--line-height: 1.05;
 }
 
+/* ── React Flow chrome in the Signal style ─────────────────────────────── */
+.wm-controls { box-shadow: none !important; border: 1px solid var(--color-line-strong); border-radius: 10px; overflow: hidden; }
+.wm-controls .react-flow__controls-button { background: #16161a !important; border-bottom: 1px solid var(--color-line) !important; color: var(--color-fg-muted) !important; width: 28px; height: 28px; }
+.wm-controls .react-flow__controls-button:hover { background: #1f1f24 !important; color: var(--color-fg) !important; }
+.react-flow__attribution { background: transparent !important; opacity: 0.45; }
+.react-flow__attribution a { color: var(--color-fg-faint) !important; }
+
 /* ── Shared building blocks ───────────────────────────────────────────── */
 @utility glass {
   background: linear-gradient(180deg, rgb(255 255 255 / 0.06), rgb(255 255 255 / 0.02));
@@ -72,6 +79,15 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+/* QA switch ?motion=reduced mirrors the OS setting */
+:root.reduce-motion {
   *, *::before, *::after {
     animation-duration: 1ms !important;
     animation-iteration-count: 1 !important;

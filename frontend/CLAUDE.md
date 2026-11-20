@@ -8,7 +8,8 @@ The plan, art direction and roadmap are in `../docs/BLUEPRINT.md`. Missing facts
 3. **The browser is the truth.** Check every visual change at 1440, 1024 and 375 px. Check the console, and check that `scrollWidth <= innerWidth`.
 4. **Motion has a reduced-motion path.** `?motion=reduced` forces it; `MotionConfig reducedMotion="user"` is used on the landing page.
 5. **MotionSites templates** (`facet`, `mossline`, `shipcraft` zips) are **references only**. Re-implement the techniques; never paste their code or hot-link their CDN images or videos. The zips stay out of git.
-6. **One accent.** `signal` (#C8F65A) means "the Apprentice is active". `stop` (#FF5D52) is only for guardrails and blocked actions. No new colours outside `@theme` in `src/styles/app.css`.
+6. **One accent, used with discipline.** Lime is for the Apprentice (orb, live and listening states, current stage, starting capture or a session). Console actions such as Save, Generate and Start training are neutral white (`bg-fg text-ink`). Emergency badges are outline-only.
+7. **Former rule 6:** `signal` (#C8F65A) means "the Apprentice is active". `stop` (#FF5D52) is only for guardrails and blocked actions. No new colours outside `@theme` in `src/styles/app.css`.
 
 ## Stack
 - Vite 8, React 19, TS 7, Tailwind v4 (theme and utilities only; **no Preflight** yet), Motion 14, three 0.187, lucide-react.
@@ -16,7 +17,9 @@ The plan, art direction and roadmap are in `../docs/BLUEPRINT.md`. Missing facts
 - **Don't add:** GSAP, Lenis or other smooth-scroll libraries, React Router, R3F, other UI kits, WebXR. Reason: one animation library, native scroll, a small bundle.
 
 ## Architecture
-- `src/lib/route.ts`: `/` is the landing page, `/app` is the console (History API). The host needs an SPA rewrite: `/*` → `/index.html`.
+- `src/lib/route.ts`: `/` is the landing page, `/app` is the console (History API). The build copies the shell to `dist/app/index.html`, so no host rewrite is needed.
+- `src/App.tsx` is just a route switch. `src/console/ConsoleApp.tsx` (lazy) holds the session provider, screens, ElevenLabs `ConversationProvider` and the legacy prototype, so the landing page never loads the voice SDK.
+- `src/lib/a11y.ts`: `rovingKeyDown` (radiogroups and tablists) and `trapTab` (dialogs). Use them for any new grouped control.
 - `src/styles/app.css`: layers `theme → legacy (old index.css) → utilities`. The legacy CSS variables were remapped to the new palette, so the old screens restyle without code changes.
 - `src/engine/ApprenticeCore.ts`: a framework-agnostic three.js scene, lazy chunk (~154 KB gz).
   - API: `setProgress(0..1)`, `launch()`, `setPaused()`, `dispose()`.
@@ -31,7 +34,7 @@ The plan, art direction and roadmap are in `../docs/BLUEPRINT.md`. Missing facts
 - `src/landing/`: `HeroScene` (React wrapper) and `Landing` (the scroll document over a fixed stage; the pinned story maps scroll onto formations).
 
 ## QA switches
-`?legacy=1` (old prototype toggle) · `?webgl=off` · `?quality=low|high` · `?motion=reduced` · `?orb=listening|speaking|alert|…` (forces the panel orb state)
+`/app?legacy=1` (old prototype toggle; console only) · `?webgl=off` · `?quality=low|high` · `?motion=reduced` · `?orb=listening|speaking|alert|…` (forces the panel orb state)
 
 ## Commands
 `npm run dev` · `npm run typecheck` · `npm run build` · `npm test`. The launch config `frontend` is in `../.claude/launch.json`.

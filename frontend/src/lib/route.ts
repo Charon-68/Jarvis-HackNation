@@ -10,7 +10,7 @@ export type Route = "landing" | "app";
 const EVENT = "apprentice:navigate";
 
 function readRoute(): Route {
-  return window.location.pathname.replace(/\/+$/, "").endsWith("/app") ? "app" : "landing";
+  return window.location.pathname.replace(/\/+$/, "") === "/app" ? "app" : "landing";
 }
 
 function subscribe(cb: () => void) {
@@ -27,9 +27,13 @@ export function useRoute(): Route {
 }
 
 export function navigate(to: Route) {
-  const path = to === "app" ? "/app" : "/";
-  if (window.location.pathname !== path) {
-    window.history.pushState({}, "", path + window.location.search);
+  if (readRoute() !== to) {
+    const path = to === "app" ? "/app" : "/";
+    // ?legacy is a console-only switch; don't carry it to the landing page.
+    const params = new URLSearchParams(window.location.search);
+    if (to === "landing") params.delete("legacy");
+    const qs = params.toString();
+    window.history.pushState({}, "", path + (qs ? `?${qs}` : ""));
   }
   window.dispatchEvent(new Event(EVENT));
 }

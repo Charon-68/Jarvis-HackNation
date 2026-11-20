@@ -8,4 +8,4 @@
 | C4 | Devpost or video links | Landing CTAs | GitHub link only | No |
 | C5 | Logo or wordmark preference | Nav, favicon | Typographic wordmark with a signal dot | No |
 | C6 | Keep the legacy prototype reachable? | `?legacy=1` | Kept, hidden from normal users | No |
-| C7 | **Render SPA rewrite** `/*` → `/index.html` | Deep links and refreshes on `/app` | `/app` 404s on refresh in production; client-side navigation still works | **Yes, for deep links** |
+| C7 | ~~Render SPA rewrite~~ | Deep links on `/app` | **Resolved in M8:** the build emits `dist/app/index.html`, so no host rule is needed | No |

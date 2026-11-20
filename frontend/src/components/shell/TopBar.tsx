@@ -34,7 +34,10 @@ export default function TopBar({ phase, hasSession, participant, mode, onSkipToT
   return (
     <header className="relative z-20 flex h-14 shrink-0 items-center gap-3 border-b border-line bg-ink/80 px-3 backdrop-blur-xl sm:px-5">
       <button
-        onClick={() => navigate("landing")}
+        onClick={() => {
+          if (hasSession && !window.confirm("Leave the console? Your current session will end.")) return;
+          navigate("landing");
+        }}
         className="focus-ring flex items-center gap-2 rounded-md py-1 pr-1 text-sm font-medium tracking-tight text-fg"
         title="Back to the landing page"
       >

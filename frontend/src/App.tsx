@@ -4,7 +4,7 @@
  * and the console never downloads the landing's 3D scene.
  */
 import { lazy, Suspense } from "react";
-import { flag, navigate, useRoute } from "./lib/route";
+import { navigate, useRoute } from "./lib/route";
 
 const Landing = lazy(() => import("./landing/Landing"));
 const ConsoleApp = lazy(() => import("./console/ConsoleApp"));
@@ -13,7 +13,7 @@ const blank = <div style={{ height: "100svh", background: "#09090b" }} />;
 
 export default function App() {
   const route = useRoute();
-  const showConsole = route === "app" || flag("legacy") === "1";
+  const showConsole = route === "app";
 
   return (
     <Suspense fallback={blank}>

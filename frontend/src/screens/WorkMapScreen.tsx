@@ -12,6 +12,7 @@ import type { WorkMapStep } from "../types/index";
 import EvidenceReplayModal from "../components/EvidenceReplayModal";
 import StepDetail from "../workmap/StepDetail";
 import SignalOrb from "../components/SignalOrb";
+import { rovingKeyDown } from "../lib/a11y";
 
 const WorkMapGraph = lazy(() => import("../workmap/WorkMapGraph"));
 
@@ -75,7 +76,12 @@ export default function WorkMapScreen() {
         </div>
 
         <div className="ml-auto flex items-center gap-2">
-          <div role="tablist" aria-label="Work Map view" className="flex rounded-lg border border-line bg-raised/60 p-0.5">
+          <div
+            role="tablist"
+            aria-label="Work Map view"
+            className="flex rounded-lg border border-line bg-raised/60 p-0.5"
+            onKeyDown={(e) => rovingKeyDown(e, ["graph", "list"] as const, view, setView)}
+          >
             {(
               [
                 ["graph", "Graph", Network],
@@ -86,6 +92,9 @@ export default function WorkMapScreen() {
                 key={k}
                 role="tab"
                 aria-selected={view === k}
+                aria-controls="workmap-view"
+                id={`workmap-tab-${k}`}
+                tabIndex={view === k ? 0 : -1}
                 onClick={() => setView(k)}
                 className={`focus-ring flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition ${
                   view === k ? "bg-ink text-fg ring-1 ring-line-strong" : "text-fg-muted hover:text-fg"
@@ -99,7 +108,7 @@ export default function WorkMapScreen() {
           <button
             id="start-training-from-map-btn"
             onClick={startTraining}
-            className="focus-ring group flex items-center gap-1.5 rounded-lg bg-signal px-3.5 py-2 text-[13px] font-medium text-signal-ink transition hover:bg-[#d6ff78]"
+            className="focus-ring group flex items-center gap-1.5 rounded-lg bg-fg px-3.5 py-2 text-[13px] font-medium text-ink transition hover:bg-white"
           >
             Start training <ArrowRight className="size-4 transition group-hover:translate-x-0.5" aria-hidden />
           </button>
@@ -108,10 +117,10 @@ export default function WorkMapScreen() {
 
       {/* Summary strip */}
       {(workMap.summary || (workMap.guardrails && workMap.guardrails.length > 0)) && (
-        <div className="flex shrink-0 gap-4 overflow-x-auto border-b border-line bg-ink/40 px-4 py-2.5 sm:px-6">
-          {workMap.summary && <p className="max-w-[60ch] shrink-0 text-[12.5px] leading-snug text-fg-muted">{workMap.summary}</p>}
+        <div className="flex shrink-0 flex-wrap items-center gap-x-4 gap-y-2 border-b border-line bg-ink/40 px-4 py-2.5 sm:px-6">
+          {workMap.summary && <p className="m-0 w-full max-w-[80ch] text-[12.5px] leading-snug text-fg-muted [overflow-wrap:anywhere]">{workMap.summary}</p>}
           {workMap.guardrails?.map((g) => (
-            <span key={g} className="flex shrink-0 items-center gap-1.5 self-center rounded-full border border-stop/30 bg-stop/[0.06] px-2.5 py-1 text-[11px] text-[#ffd2cc]">
+            <span key={g} className="flex items-center gap-1.5 rounded-full border border-stop/30 bg-stop/[0.06] px-2.5 py-1 text-[11px] text-[#ffd2cc]">
               <OctagonAlert className="size-3 text-stop" aria-hidden />
               {g}
             </span>
@@ -128,6 +137,9 @@ export default function WorkMapScreen() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
+            id="workmap-view"
+            role="tabpanel"
+            aria-labelledby="workmap-tab-graph"
             className="grid min-h-0 flex-1 max-md:overflow-y-auto md:grid-cols-[minmax(0,1fr)_380px]"
           >
             <div className="relative min-h-[58svh] md:min-h-0">
@@ -167,6 +179,9 @@ export default function WorkMapScreen() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
+            id="workmap-view"
+            role="tabpanel"
+            aria-labelledby="workmap-tab-list"
             className="min-h-0 flex-1 overflow-y-auto px-4 py-6 sm:px-6"
           >
             <ol aria-label="Work Map steps" className="mx-auto flex max-w-3xl flex-col gap-4">

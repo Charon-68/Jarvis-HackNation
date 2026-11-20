@@ -26,7 +26,7 @@ export const landing = {
       index: "01",
       label: "Capture",
       title: "It watches the expert work.",
-      body: "The expert shares their screen and triages real tickets. At natural pauses, never mid-typing, the Apprentice asks short voice questions about what's on screen. At least one of them surfaces a guardrail.",
+      body: "The expert shares their screen and triages real tickets. At natural pauses, the Apprentice asks short voice questions about what's on screen. At least one of them surfaces a guardrail.",
     },
     {
       id: "map",
@@ -57,7 +57,7 @@ export const landing = {
   },
   trust: [
     { title: "Off the record", body: "The expert can pause recording at any moment." },
-    { title: "PII redaction", body: "A redaction layer strips emails, phone numbers, card numbers and API keys from captured text." },
+    { title: "PII redaction", body: "A redaction module detects emails, phone numbers, card numbers and API keys." },
     { title: "Evidence-linked", body: "Each step in the Work Map points back to the screen moment it came from." },
   ],
   closing: {

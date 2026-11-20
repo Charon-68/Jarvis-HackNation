@@ -222,7 +222,7 @@ function GraphInner({
       style={{ background: "transparent" }}
     >
       <Background variant={BackgroundVariant.Dots} gap={22} size={1} color="rgba(255,255,255,0.09)" />
-      <Controls showInteractive={false} position="bottom-right" />
+      <Controls showInteractive={false} position="bottom-right" className="wm-controls max-md:!hidden" />
     </ReactFlow>
     </div>
   );

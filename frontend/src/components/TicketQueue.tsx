@@ -40,13 +40,13 @@ export default function TicketQueue({ tickets, activeTicketId, solvedTicketIds, 
                 aria-current={isActive ? "true" : undefined}
                 className={`focus-ring group relative flex w-full flex-col gap-1 overflow-hidden rounded-lg px-3 py-2.5 text-left transition ${
                   isActive
-                    ? "bg-signal/[0.07] ring-1 ring-signal/30"
+                    ? "bg-raised ring-1 ring-line-strong"
                     : "hover:bg-raised disabled:hover:bg-transparent"
                 } ${disabled ? "cursor-not-allowed opacity-60" : ""}`}
               >
-                {isActive && <span className="absolute inset-y-2 left-0 w-0.5 rounded-full bg-signal" aria-hidden />}
+                {isActive && <span className="absolute inset-y-2 left-0 w-0.5 rounded-full bg-fg" aria-hidden />}
                 <span className="flex items-center justify-between gap-2">
-                  <span className={`font-mono text-xs font-medium ${isActive ? "text-signal" : "text-fg-muted"}`}>{t.id}</span>
+                  <span className={`font-mono text-xs font-medium ${isActive ? "text-fg" : "text-fg-muted"}`}>{t.id}</span>
                   {isSolved ? (
                     <span className="flex items-center gap-1 text-[10.5px] font-medium text-verified">
                       <CheckCircle2 className="size-3" aria-hidden /> Saved

@@ -8,6 +8,7 @@ import { AnimatePresence, MotionConfig, motion } from "motion/react";
 import { ArrowRight, ArrowUpRight, FolderGit2, ShieldCheck, EyeOff, Link2 } from "lucide-react";
 import HeroScene, { type HeroSceneHandle } from "./HeroScene";
 import { landing } from "@/content/landing";
+import { prefersReducedMotion } from "@/lib/route";
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 
@@ -18,6 +19,7 @@ export default function Landing({ onLaunch }: { onLaunch: () => void }) {
   const scene = useRef<HeroSceneHandle>(null);
   const tagEls = useRef<Array<HTMLDivElement | null>>([]);
   const captureWeight = useRef(0);
+  const mapWeight = useRef(0);
   const [beat, setBeat] = useState(-1); // -1 = hero, 0..2 = story beats
   const [launching, setLaunching] = useState(false);
 
@@ -37,6 +39,7 @@ export default function Landing({ onLaunch }: { onLaunch: () => void }) {
 
     const s = p * 3;
     captureWeight.current = Math.max(0, 1 - Math.abs(s - 1) * 1.6);
+    mapWeight.current = Math.max(0, 1 - Math.abs(s - 2) * 1.6);
     setBeat(el.scrollTop < top - vh * 0.35 ? -1 : Math.min(2, Math.floor(p * 3 * 0.999 + 0.0001)));
 
     // Dim the stage once the story is over so later sections read cleanly.
@@ -57,26 +60,29 @@ export default function Landing({ onLaunch }: { onLaunch: () => void }) {
   }, [onScroll]);
 
   const onAnchors = useCallback((anchors: Array<{ x: number; y: number; visible: boolean }>) => {
-    const w = captureWeight.current;
     anchors.forEach((a, i) => {
       const tag = tagEls.current[i];
       if (!tag) return;
+      // The guardrail tag (last) also labels its red node in the Map beat.
+      const w = i === anchors.length - 1 ? Math.max(captureWeight.current, mapWeight.current) : captureWeight.current;
       tag.style.transform = `translate3d(${a.x.toFixed(1)}px, ${a.y.toFixed(1)}px, 0)`;
       tag.style.opacity = String(a.visible ? w : 0);
     });
   }, []);
 
+  const launchingRef = useRef(false);
   const launch = useCallback(async () => {
-    if (launching) return;
+    if (launchingRef.current) return;
+    launchingRef.current = true;
     setLaunching(true);
     await Promise.all([scene.current?.launch(), new Promise((r) => setTimeout(r, 450))]);
     onLaunch();
-  }, [launching, onLaunch]);
+  }, [onLaunch]);
 
-  const scrollToStory = () => story.current?.scrollIntoView({ behavior: "smooth" });
+  const scrollToStory = () => story.current?.scrollIntoView({ behavior: prefersReducedMotion() ? "auto" : "smooth" });
 
   return (
-    <MotionConfig reducedMotion="user">
+    <MotionConfig reducedMotion={prefersReducedMotion() ? "always" : "user"}>
       <div className="fixed inset-0 bg-ink text-fg font-sans">
         {/* 3D stage */}
         <div ref={stage} className="pointer-events-none absolute inset-0 transition-opacity duration-300">
@@ -252,6 +258,7 @@ export default function Landing({ onLaunch }: { onLaunch: () => void }) {
                   <video
                     className="aspect-video w-full rounded-xl bg-black"
                     src={landing.demo.src}
+                    aria-label="Demo video: AI Apprentice support triage walkthrough"
                     controls
                     preload="metadata"
                     playsInline
