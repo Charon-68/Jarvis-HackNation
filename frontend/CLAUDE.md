@@ -37,9 +37,12 @@ The plan, art direction and roadmap are in `../docs/BLUEPRINT.md`. Missing facts
 `/app?legacy=1` (old prototype toggle; console only) · `?webgl=off` · `?quality=low|high` · `?motion=reduced` · `?orb=listening|speaking|alert|…` (forces the panel orb state)
 
 ## Commands
+`API_PROXY=https://jarvis-hacknation.onrender.com PORT=5174 npm run dev` runs the local UI against the deployed backend (the `frontend-live-api` launch config). The backend's CORS only allows the production origin, so a direct call from localhost would be refused.
+
 `npm run dev` · `npm run typecheck` · `npm run build` · `npm test`. The launch config `frontend` is in `../.claude/launch.json`.
 
 ## Gotchas
+- All API calls go through `apprenticeApi` (exported from `store/sessionStore`): real backend first, mock fallback with a console warning. Never call `mockApi` directly from a screen.
 - `renderer.setSize(w, h, false)` doesn't set CSS size; the canvas style is forced to 100%.
 - The legacy `index.css` `h3` style is uppercase and muted. Override it with `normal-case tracking-normal` in new UI.
 - Without Preflight, buttons get UA styles; a minimal reset is in `app.css`.

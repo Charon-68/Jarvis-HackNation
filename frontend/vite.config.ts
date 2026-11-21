@@ -34,7 +34,12 @@ export default defineConfig({
     },
   },
   server: {
-    port: 5173,
+    port: Number(process.env.PORT) || 5173,
     host: "127.0.0.1",
+    // Dev only: API_PROXY=https://<backend> proxies /api so the local UI can hit a
+    // deployed backend without CORS changes. Unset = relative /api (mock fallback).
+    proxy: process.env.API_PROXY
+      ? { "/api": { target: process.env.API_PROXY, changeOrigin: true, secure: true } }
+      : undefined,
   },
 });

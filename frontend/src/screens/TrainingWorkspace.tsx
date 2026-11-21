@@ -26,9 +26,8 @@ import SelectField from "../components/ui/SelectField";
 import { prefersReducedMotion } from "../lib/route";
 import PriorityBadge from "../components/ui/PriorityBadge";
 import { useState, useEffect, useRef, useCallback } from "react";
-import { useSession } from "../store/sessionStore";
+import { apprenticeApi, useSession } from "../store/sessionStore";
 import { TRAINING_CASE } from "../data/ticketRepository";
-import { mockApi } from "../mocks/mockServices";
 import { useElevenLabsVoiceAgent } from "../adapters/useElevenLabsVoiceAgent";
 import { DefaultScreenCaptureController } from "../capture/ScreenCaptureController";
 import { MockVisionAdapter } from "../adapters/visionAdapter";
@@ -226,7 +225,8 @@ export default function TrainingWorkspace() {
 
     try {
       // Delegate evaluation strictly to ApprenticeApi (never in React component)
-      const evalResult = await mockApi.evaluateDecision(attempt, workMap!);
+      // Backend evaluator (deterministic guardrail rules + work map); mock only if unreachable.
+      const evalResult = await apprenticeApi.evaluateDecision(attempt, workMap!);
 
       if (evalResult.allowSave) {
         setSavedOk(true);
@@ -242,7 +242,7 @@ export default function TrainingWorkspace() {
           completed: true,
           timestampMs: Date.now(),
         };
-        await mockApi.saveTrainingResult(result);
+        await apprenticeApi.saveTrainingResult(result);
         setTrainingResult(result);
 
         dispatchAgentMessage({

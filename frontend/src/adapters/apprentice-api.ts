@@ -203,7 +203,8 @@ export class HybridApprenticeApi implements ApprenticeApi {
     if (this.useMockOnly) return this.mockApi.evaluateDecision(attempt, workMap);
     try {
       return await this.httpApi.evaluateDecision(attempt, workMap);
-    } catch {
+    } catch (err) {
+      console.warn("Backend evaluation unavailable; using mock evaluator.", (err as Error).message);
       return this.mockApi.evaluateDecision(attempt, workMap);
     }
   }
@@ -212,7 +213,8 @@ export class HybridApprenticeApi implements ApprenticeApi {
     if (this.useMockOnly) return this.mockApi.saveTrainingResult(result);
     try {
       return await this.httpApi.saveTrainingResult(result);
-    } catch {
+    } catch (err) {
+      console.warn("Backend unavailable; training result kept in the mock store only.", (err as Error).message);
       return this.mockApi.saveTrainingResult(result);
     }
   }

@@ -23,7 +23,8 @@ import { mockApi } from "../mocks/mockServices";
 import { HybridApprenticeApi } from "../adapters/apprentice-api";
 import { evidenceStore } from "./evidenceStore";
 
-const apprenticeApi = new HybridApprenticeApi(mockApi);
+/** Shared API: real backend first, mock fallback if it is unreachable or slow. */
+export const apprenticeApi = new HybridApprenticeApi(mockApi);
 
 // ---------------------------------------------------------------------------
 // State shape
